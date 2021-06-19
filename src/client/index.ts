@@ -134,7 +134,6 @@ export function ViteSSG(
     })
 
     if (!client) {
-      console.log(`SSR 3: ${import.meta.env.SSR} => INCLUDE HERE THE LOGIC`)
       if (localeInfo && localeInfo.current !== i18nOptions!.defaultLocale)
         router.push({ path: `${routerOptions.base || '/'}${localeInfo.current}/` })
       else
