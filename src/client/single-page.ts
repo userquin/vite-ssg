@@ -31,7 +31,7 @@ export function ViteSSG(
       app.use(head)
     }
 
-    const context = { app, head, isClient, router: undefined, routes: undefined, initialState: {} }
+    const context = { app, head, isClient, createI18n: undefined, localeInfo: undefined, router: undefined, routes: undefined, initialState: {} }
 
     if (registerComponents)
       app.component('ClientOnly', client ? ClientOnly : { render: () => null })

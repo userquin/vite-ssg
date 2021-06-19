@@ -1,0 +1,8 @@
+counter: Contador {0}
+button:
+  inc: Aumentar
+  dec: Disminuir
+
+pageb:
+  title: Hola soy B
+  imgtitle: Imagen para soy B

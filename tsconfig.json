@@ -11,7 +11,10 @@
     "strictNullChecks": true,
     "moduleResolution": "Node",
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": [
+      "vite/client"
+    ]
   },
   "exclude": [
     "**/dist",
