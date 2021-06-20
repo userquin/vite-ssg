@@ -1,12 +1,14 @@
 /* eslint-disable no-console */
-import { join, dirname } from 'path'
+import path, { join, dirname } from 'path'
 import chalk from 'chalk'
 import fs from 'fs-extra'
-import { build as viteBuild, resolveConfig, UserConfig } from 'vite'
+import { build as viteBuild, normalizePath, resolveConfig, UserConfig } from 'vite'
 import { renderToString, SSRContext } from '@vue/server-renderer'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { RollupOutput } from 'rollup'
+import { RouteRecordRaw } from 'vue-router'
 import { ViteSSGContext, ViteSSGOptions } from '../client'
+import { normalizeLocalePathVariable } from '../i18n/utils'
 import { renderPreloadLinks } from './preload-links'
 import { buildLog, routesToPaths, getSize } from './utils'
 
@@ -73,13 +75,45 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
   const ssrManifest: Manifest = JSON.parse(await fs.readFile(join(out, 'ssr-manifest.json'), 'utf-8'))
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createApp } = require(join(ssgOut, 'main.js')) as { createApp(client: boolean): Promise<ViteSSGContext<true> | ViteSSGContext<false>> }
+  const { createApp } = require(join(ssgOut, 'main.js')) as {
+    createApp(
+      client: boolean,
+      base?: string,
+      requestHeaders?: {
+        acceptLanguage?: string
+        requestUrl?: string
+        localeCookie?: string
+      }
+    ): Promise<ViteSSGContext<true> | ViteSSGContext<false>>
+  }
 
   let indexHTML = await fs.readFile(join(out, 'index.html'), 'utf-8')
 
   const { routes, initialState } = await createApp(false)
 
-  let routesPaths = await includedRoutes(routesToPaths(routes))
+  let base: string | undefined
+  let routesPaths: string[]
+
+  if (cliOptions.i18nOptions?.locales) {
+    routesPaths = []
+    base = cliOptions.i18nOptions.base
+    const { defaultLocale, localePathVariable } = cliOptions.i18nOptions
+    const normalizedLocale = `/:${normalizeLocalePathVariable(localePathVariable)}?`
+    const localeRoute: RouteRecordRaw[] | undefined = routes?.filter(r => r.path === normalizedLocale)
+    if (localeRoute) {
+      routesPaths = await includedRoutes(routesToPaths(localeRoute[0].children || []))
+      const newRoutes: string[] = []
+      Object.keys(cliOptions.i18nOptions.locales).filter(l => l !== defaultLocale).forEach((l) => {
+        routesPaths.forEach((path) => {
+          newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
+        })
+      })
+      routesPaths.push(...newRoutes)
+    }
+  }
+  else {
+    routesPaths = await includedRoutes(routesToPaths(routes))
+  }
   // uniq
   routesPaths = Array.from(new Set(routesPaths))
 
@@ -97,7 +131,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
   await Promise.all(
     routesPaths.map(async(route) => {
-      const { app, router, head } = await createApp(false)
+      const { app, router, head } = await createApp(false, base, { requestUrl: route })
 
       if (router) {
         await router.push(route)
