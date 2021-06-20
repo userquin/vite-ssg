@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import yargs from 'yargs'
+import { readJSON } from 'fs-extra'
 import { build } from './build'
 
 yargs
@@ -16,8 +17,19 @@ yargs
       .option('mock', {
         type: 'boolean',
         describe: 'Mock browser globals (window, document, etc.) for SSG',
+      })
+      .option('i18n', {
+        type: 'string',
+        describe: 'I18n JSON configuration file for SSG',
+      })
+      .option('i18n', {
+        type: 'string',
+        describe: 'I18n configuration file (JSON) for SSG',
       }),
     async(args) => {
+      if (args.i18n)
+        args.i18nOptions = await readJSON(args.i18n)
+
       await build(args)
     },
   )
