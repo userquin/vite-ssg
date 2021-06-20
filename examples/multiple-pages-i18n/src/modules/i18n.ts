@@ -8,10 +8,7 @@ const messages = Object.fromEntries(Object.entries(import.meta.globEager('../../
 )
 
 export const install = (ctx: ViteSSGContext) => {
-  console.log(`Detected locale: ${JSON.stringify(ctx.localeInfo)}`)
-  console.log(`Routes: ${JSON.stringify(ctx.routes)}`)
-
-  ctx.createI18n?.(() => messages, ctx.app, ctx.localeInfo)
+  ctx.createI18n?.(ctx, () => messages, '../../locales/')
 
   // const fallbackLocale = 'en'
   // const i18n = createI18n({

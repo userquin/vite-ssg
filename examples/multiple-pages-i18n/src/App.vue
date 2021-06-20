@@ -1,7 +1,41 @@
 <script setup lang="ts">
 import { useAvailableLocales } from 'vite-ssg'
 
-const availableLocales = useAvailableLocales()
+const { availableLocales, route } = useAvailableLocales()
+
+// useI18nHead(async(locale) => {
+//   console.log(`LOCALE RELOAD: ${locale.locale}`)
+//   try {
+//     let modules = await import(/* @vite-ignore */ `../locales/pages/${route.meta.rawPath}.yml`)
+//     let page = modules.default[locale.locale]
+//
+//     console.log('YAML')
+//     console.log(page)
+//
+//     modules = await import(/* @vite-ignore */ `../locales/pages/${route.meta.rawPath}.json5`)
+//     page = modules.default[locale.locale]
+//
+//     console.log('JSON5')
+//     console.log(page)
+//   }
+//   catch (err) {
+//     console.error('upps', err)
+//   }
+//   return {
+//     title: 'Hello',
+//     meta: [
+//       {
+//         name: 'description',
+//         content: 'Website description',
+//       },
+//     ],
+//     style: [
+//       {
+//         children: 'body {color: #567839}',
+//       },
+//     ],
+//   }
+// })
 </script>
 
 <template>
@@ -15,14 +49,13 @@ const availableLocales = useAvailableLocales()
     </RouterLink>
   </nav>
   <main>
-    <router-view />
+    <router-view :key="route.fullPath" />
   </main>
 </template>
 
 <style scoped>
 nav {
   padding: 1rem 10em;
-  width: 100vw;
 }
 nav a:not(:first-of-type) {
   padding-left: 1rem;

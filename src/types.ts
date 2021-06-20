@@ -1,61 +1,8 @@
 import { App } from 'vue'
-import { RouteLocationRaw, Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
-import { I18n } from 'vue-i18n'
-import { HeadAttrs, HeadClient, HeadObject } from '@vueuse/head'
-
-export type Crawling = {
-  // https://developers.google.com/search/docs/advanced/crawling/special-tags
-  noTranslate?: HeadAttrs
-  // localized versions of your page
-  // https://developers.google.com/search/docs/advanced/crawling/localized-versions
-  localizedVersions?: Record<string, HeadAttrs>
-  /**
-   * Extract head entries.
-   */
-  extractAlternateUrls?: () => HeadAttrs[]
-}
-
-export type ViteSSGLocale = {
-  locale: string
-  description: string
-  lang: string
-  country?: string
-  variant?: string
-  to: RouteLocationRaw
-}
-
-export type LocaleInfo = {
-  current: string
-  locales: Record<string, ViteSSGLocale>
-}
-
-// @ts-ignore
-export type CreateVueI18nFn = (
-  messagesResolver: () => Record<string, any>,
-  app: App,
-  localeInfo?: LocaleInfo,
-) => I18n<Record<string, any>, unknown, unknown, false>
-
-export interface I18nOptions {
-  /**
-   * Default locale for the application.
-   */
-  defaultLocale: string
-  /**
-   * The path variable to match the locale.
-   *
-   * @default 'locale'
-   */
-  localePathVariable?: string
-  /**
-   * Locale and its description.
-   *
-   * The `locale description` should be in its own `locale`, for example:
-   *
-   * `'en-US': 'American English'` or `'es-ES': 'Español de España'`
-   */
-  locales?: Record<string, string> | undefined
-}
+import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
+import { HeadClient, HeadObject } from '@vueuse/head'
+import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
+import { useAvailableLocales } from './i18n/composables'
 
 export interface ViteSSGOptions {
   /**
@@ -115,6 +62,7 @@ export interface ViteSSGOptions {
    * Including this entry will force `useHead` to `true`.
    */
   i18nOptions?: I18nOptions
+
 }
 
 type PartialKeys<T, Keys extends keyof T> = Omit<T, Keys> & Partial<Pick<T, Keys>>
@@ -126,9 +74,8 @@ export interface ViteSSGContext<HasRouter extends boolean = true> {
   initialState: Record<string, any>
   head: HeadClient | undefined
   isClient: boolean
-  localeInfo: LocaleInfo | undefined
   // @ts-ignore
-  createI18n?: CreateVueI18nFn
+  createI18n?: CreateVueI18n
 }
 
 export interface ViteSSGClientOptions {
@@ -146,9 +93,16 @@ export interface ViteSSGClientOptions {
 
 export type RouterOptions = PartialKeys<VueRouterOptions, 'history'> & { base?: string }
 
+export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales }
+
 // extend vue-router meta
 declare module 'vue-router' {
+  // @ts-ignore
   interface RouteMeta {
+    /**
+     * The original `path` without the `locale` prefix.
+     */
+    rawPath?: string
     /**
      * The locale for the route.
      */
@@ -156,15 +110,19 @@ declare module 'vue-router' {
     /**
      * Inject the following objects to `HeadObject` (to be used with `useHead`):
      *
-     * 1) Meta tag for `og:locale` for the current locale:
+     * 1) `lang` attribute for `html` element:
+     * ```html
+     * <html lang="en">
+     * ```
+     * 2) Meta tag for `og:locale` for the current locale:
      * ```html
      * <meta property="og:locale" content="en">
      * ```
-     * 2) Meta tag to avoid browser showing page translation popup:
+     * 3) Meta tag to avoid browser showing page translation popup:
      * ```html
      * <meta name="google" content="notranslate">
      * ```
-     * 3) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
+     * 4) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
      * ```html
      * <link rel="alternate" hreflang="x-default" href="http://localhost:3000/route">
      * <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">

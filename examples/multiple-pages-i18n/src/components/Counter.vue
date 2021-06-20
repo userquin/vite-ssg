@@ -11,12 +11,14 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue'
+import { defineProps, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ init?: number }>()
-const { t } = useI18n()
-
+const { t, locale } = useI18n({ useScope: 'global' })
+watch(locale, (l) => {
+  console.log(`LOCALE CHANGED: ${locale}`)
+})
 const counter = ref(props.init || 0)
 </script>
 

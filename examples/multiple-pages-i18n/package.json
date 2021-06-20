@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "dev": "cross-env DEBUG=vite-ssg:* vite",
-    "build": "cross-env DEBUG=vite-ssg:* vite-ssg build",
+    "build": "cross-env DEBUG=vite-ssg:* vite-ssg build --i18n ./ssg-i18n-options.json",
+    "cli-help": "cross-env DEBUG=vite-ssg:* vite-ssg build --help",
     "serve": "vite preview"
   },
   "dependencies": {
@@ -15,6 +16,8 @@
     "@intlify/vite-plugin-vue-i18n": "^2.2.1",
     "@vue/compiler-sfc": "^3.1.1",
     "cross-env": "^7.0.3",
+    "esno": "^0.7.3",
+    "tsup": "^4.11.2",
     "typescript": "^4.3.3",
     "vite": "^2.3.7",
     "vite-plugin-components": "^0.11.1",

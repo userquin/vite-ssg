@@ -2,7 +2,3 @@ counter: Counter {0}
 button:
   inc: Increment
   dec: Decrement
-
-pageb:
-  title: Hello I am B
-  imgtitle: Image for hello I am B
