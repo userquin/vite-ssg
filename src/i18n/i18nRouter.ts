@@ -138,6 +138,7 @@ export function createI18nRouter(
       // we only need handle the route change on the client side
       // we have calculated yet the current lang for SSR and SSG
       if (client && isClient) {
+        // todo@userquin: include logic to change locale and load pages resources
         router.beforeEach(async(to, from, next) => {
           if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
             // The first route is rendered in the server and its state is provided globally.
