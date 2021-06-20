@@ -57,6 +57,7 @@
     "example:single:serve": "npm -C examples/single-page run serve",
     "example:i18n:dev": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run dev",
     "example:i18n:build": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run build",
+    "example:i18n:cli-help": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run cli-help",
     "example:i18n:serve": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run serve",
     "build": "rimraf dist && tsup src/index.ts src/client/single-page.ts src/node/cli.ts --dts --format cjs,esm && npm run copy-single-page-dts",
     "prepublishOnly": "npm run build",
