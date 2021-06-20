@@ -4,6 +4,7 @@ import { ViteSSGClientOptions, ViteSSGContext } from '../types'
 import { deserializeState, serializeState } from '../utils/state'
 import { ClientOnly } from './components/ClientOnly'
 
+// todo@userquin: should exclude vue-i18n and all i18n stuff
 export * from '../types'
 
 export function ViteSSG(
