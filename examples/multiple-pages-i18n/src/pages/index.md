@@ -16,6 +16,6 @@ Mouse (Client Only):
   <mouse-pos/>
 </client-only>
 
-<router-link to="/a">/a</router-link><br>
-<router-link to="/b">/b</router-link><br>
-<router-link to="/nested/deep/b">/nested/deep/b</router-link>
+<i18n-router-link to="/a">/a</i18n-router-link><br>
+<i18n-router-link to="/b">/b</i18n-router-link><br>
+<i18n-router-link to="/nested/deep/b">/nested/deep/b</i18n-router-link>
