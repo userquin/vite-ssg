@@ -6,9 +6,9 @@ import { build as viteBuild, normalizePath, resolveConfig, UserConfig } from 'vi
 import { renderToString, SSRContext } from '@vue/server-renderer'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { RollupOutput } from 'rollup'
-import { RouteRecordRaw } from 'vue-router'
 import { ViteSSGContext, ViteSSGOptions } from '../client'
-import { normalizeLocalePathVariable } from '../i18n/utils'
+import { createLocalePathRoute } from '../i18n/utils'
+import { I18nOptions } from '../i18n/types'
 import { renderPreloadLinks } from './preload-links'
 import { buildLog, routesToPaths, getSize } from './utils'
 
@@ -40,6 +40,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     onBeforePageRender,
     onPageRendered,
     onFinished,
+    i18nOptions,
   }: ViteSSGOptions = Object.assign({}, config.ssgOptions || {}, cliOptions)
 
   if (fs.existsSync(ssgOut))
@@ -87,23 +88,26 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     ): Promise<ViteSSGContext<true> | ViteSSGContext<false>>
   }
 
-  let indexHTML = await fs.readFile(join(out, 'index.html'), 'utf-8')
+  let i18n: I18nOptions | undefined
 
-  const { routes, initialState } = await createApp(false)
+  if (typeof i18nOptions === 'function')
+    i18n = await i18nOptions()
 
-  let base: string | undefined
+  const base = i18n?.base
+
+  const { routes, initialState } = await createApp(false, base)
+
   let routesPaths: string[]
 
-  if (cliOptions.i18nOptions?.locales) {
+  if (i18n?.locales) {
     routesPaths = []
-    base = cliOptions.i18nOptions.base
-    const { defaultLocale, localePathVariable } = cliOptions.i18nOptions
-    const normalizedLocale = `/:${normalizeLocalePathVariable(localePathVariable)}?`
-    const localeRoute: RouteRecordRaw[] | undefined = routes?.filter(r => r.path === normalizedLocale)
+    const { defaultLocale, localePathVariable, locales } = i18n
+    const normalizedLocale = createLocalePathRoute(localePathVariable)
+    const localeRoute = routes?.filter(r => r.path === normalizedLocale)
     if (localeRoute) {
       routesPaths = await includedRoutes(routesToPaths(localeRoute[0].children || []))
       const newRoutes: string[] = []
-      Object.keys(cliOptions.i18nOptions.locales).filter(l => l !== defaultLocale).forEach((l) => {
+      Object.keys(locales).filter(l => l !== defaultLocale).forEach((l) => {
         routesPaths.forEach((path) => {
           newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
         })
@@ -116,6 +120,8 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
   }
   // uniq
   routesPaths = Array.from(new Set(routesPaths))
+
+  let indexHTML = await fs.readFile(join(out, 'index.html'), 'utf-8')
 
   indexHTML = rewriteScripts(indexHTML, script)
 
