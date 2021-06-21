@@ -1,5 +1,14 @@
+import { NavigationGuardNext, RouteLocationNormalized, Router } from 'vue-router'
+import { WritableComputedRef } from '@vue/reactivity'
+import { nextTick } from 'vue'
+import { Composer } from 'vue-i18n'
+import { ViteSSGContext } from '../types'
+import { HeadConfigurer } from './types'
+import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
-import type { I18nOptions, LocaleInfo, ViteSSGLocale } from './types'
+import type { I18nOptions, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
+import type { I18n, Locale } from 'vue-i18n'
+import type { HeadClient, HeadObject } from '@vueuse/head'
 
 export function detectClientLocale(defaultLocale: string, localesMap: Map<string, ViteSSGLocale>): LocaleInfo {
   // todo@userquin: add cookie handling
@@ -47,6 +56,11 @@ export function normalizeLocalePathVariable(localePathVariable?: string): string
 
   return localePathVariable
 }
+
+export function createLocalePathRoute(localePathVariable?: string): string {
+  return `/:${normalizeLocalePathVariable(localePathVariable)}?`
+}
+
 export function initializeI18n(base?: string, i18nOptions?: I18nOptions): {
   enabled: boolean
   info?: I18nConfigurationOptions
@@ -92,7 +106,12 @@ function parseAcceptLanguageHeader(al: string): Array<string> {
       return r !== undefined
     }).sort((a, b) => {
       return b!.quality - a!.quality
-    }).map(r => r!.code)
+    }).map((r) => {
+      if (r!.region)
+        return `${r!.code}-${r!.region}`
+
+      return r!.code
+    })
 }
 
 export function detectServerLocale(
@@ -104,32 +123,182 @@ export function detectServerLocale(
 ): LocaleInfo {
   let current: string | undefined
 
-  // 1) check for cookie
+  // 1) check for cookie: SSR
   if (localeCookie && localesMap.has(localeCookie))
     current = localeCookie
 
   // 2) check for request url
   if (!current && requestUrl && requestUrl !== '/') {
-    const [locale] = requestUrl.split('/')
-    if (localesMap.has(locale))
-      current = locale
+    const useRequestUrl = requestUrl.startsWith('/') ? requestUrl.substring(1) : requestUrl
+    if (useRequestUrl.length > 0) {
+      const idx = useRequestUrl.indexOf('/')
+      if (idx > 0) {
+        const locale = useRequestUrl.substring(idx)
+        if (localesMap.has(locale))
+          current = locale
+      }
+    }
   }
+
   // 3) parse acceptLanguage and use the first found
   if (!current && acceptLanguage)
     current = parseAcceptLanguageHeader(acceptLanguage).find(l => localesMap.has(l))
 
-  // todo@userquin: apply logic when not found
-  // to be removed on compile time: https://vitejs.dev/guide/ssr.html#conditional-logic
-  // if (process.env.SSR === 'true' || import.meta.env.SSR) {
-  // if (requestHeaders && defaultLocale && localesMap) {
-  //
-  // }
-  // }
   return {
     current: current || defaultLocale,
     locales: Array.from(localesMap.keys()).reduce((acc, locale) => {
       acc[locale] = localesMap.get(locale)!
       return acc
     }, {} as Record<string, ViteSSGLocale>),
+  }
+}
+
+function configureHead(
+  to: RouteLocationNormalized,
+  headObject: HeadObject,
+  i18n: I18n<Record<string, any>, unknown, unknown, false>,
+  headConfigurer?: HeadConfigurer,
+) {
+  if (headConfigurer) {
+    headConfigurer(
+      to,
+      headObject,
+      i18n.global,
+    )
+  }
+  else {
+    to.meta.injectI18nMeta?.(headObject, to)
+  }
+}
+
+export async function loadResourcesAndChangeLocale(
+  locale: ViteSSGLocale,
+  localeRef: WritableComputedRef<Locale>,
+  i18n: I18n<Record<string, any>, unknown, unknown, false>,
+  to: RouteLocationNormalized,
+  globalMessages: Record<string, any> | undefined,
+  routeMessageResolver?: I18nRouteMessageResolver,
+) {
+  // load locale messages
+  const localeCode = locale.locale
+  if (routeMessageResolver) {
+    let messages: Record<string, Record<string, any>> | undefined
+    if (routeMessageResolver)
+      messages = await routeMessageResolver(locale, to)
+
+    if (messages && messages[localeCode]) {
+      if (globalMessages && globalMessages[localeCode]) {
+        i18n.global.setLocaleMessage(localeCode, globalMessages[localeCode])
+        i18n.global.mergeLocaleMessage(localeCode, messages[localeCode])
+      }
+      else {
+        i18n.global.setLocaleMessage(localeCode, messages[localeCode])
+      }
+    }
+  }
+
+  localeRef.value = localeCode
+
+  await nextTick()
+}
+
+export function configureClientNavigationGuards(
+  router: Router,
+  head: HeadClient,
+  headObject: Ref<HeadObject>,
+  localeInfo: LocaleInfo,
+  defaultLocale: string,
+  localeMap: Map<string, ViteSSGLocale>,
+  localeRef: WritableComputedRef<Locale>,
+  i18n: I18n<Record<string, any>, unknown, unknown, false>,
+  globalMessages: Record<string, any> | undefined,
+  routeMessageResolver?: I18nRouteMessageResolver,
+  headConfigurer?: HeadConfigurer,
+) {
+  let isFirstRoute = true
+  router.beforeEach(async(to, from, next) => {
+    const paramsLocale = to.params.locale as string
+
+    const flush = isFirstRoute
+    if ((paramsLocale && !localeMap.has(paramsLocale)) || isFirstRoute) {
+      let rawPath = to.meta.rawPath!
+      if (rawPath.length > 0)
+        rawPath = `/${rawPath}`
+      if (isFirstRoute) {
+        isFirstRoute = false
+        const locale = paramsLocale || defaultLocale
+        if (locale !== localeRef.value) {
+          next({ path: `/${localeInfo.current}${rawPath}`, force: true })
+          return
+        }
+      }
+      else {
+        next({ path: `/${localeRef.value}`, force: true })
+        return
+      }
+    }
+
+    const locale = localeMap.get(paramsLocale || defaultLocale)!
+    await loadResourcesAndChangeLocale(
+      locale,
+      localeRef,
+      i18n,
+      to,
+      globalMessages,
+      routeMessageResolver,
+    )
+    next()
+  })
+  // the head object is updated before step 11 on router navigation guard on the new route
+  router.afterEach(async(to) => {
+    configureHead(
+      to,
+      headObject.value,
+      i18n,
+      headConfigurer,
+    )
+    await nextTick()
+    head.updateDOM(document)
+  })
+}
+
+export function handleFirstRouteEntryServer(
+  context: ViteSSGContext<true>,
+  headObject: Ref<HeadObject>,
+  defaultLocale: string,
+  localeMap: Map<string, ViteSSGLocale>,
+  localeRef: WritableComputedRef<Locale>,
+  i18n: I18n<Record<string, any>, unknown, unknown, false>,
+  globalMessages: Record<string, any> | undefined,
+  routeMessageResolver?: I18nRouteMessageResolver,
+  headConfigurer?: HeadConfigurer,
+): ((to: RouteLocationNormalized) => Promise<void>) {
+  let entryRoutePath: string | undefined
+  let isFirstRoute = true
+  return async(to) => {
+    const paramsLocale = to.params.locale as string || defaultLocale
+
+    await loadResourcesAndChangeLocale(
+      localeMap.get(paramsLocale)!,
+      localeRef,
+      i18n,
+      to,
+      globalMessages,
+      routeMessageResolver,
+    )
+
+    configureHead(
+      to,
+      headObject.value,
+      i18n,
+      headConfigurer,
+    )
+
+    if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
+      // The first route is rendered in the server and its state is provided globally.
+      isFirstRoute = false
+      entryRoutePath = to.path
+      to.meta.state = context.initialState
+    }
   }
 }
