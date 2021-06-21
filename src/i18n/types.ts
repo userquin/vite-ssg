@@ -1,8 +1,8 @@
-import { I18n } from 'vue-i18n'
+import { Composer, I18n } from 'vue-i18n'
 import { ViteSSGContext } from '../types'
 import type { Locale } from 'vue-i18n'
 import type { HeadAttrs, HeadObject } from '@vueuse/head'
-import type { RouteLocationRaw } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 
 export type Crawling = {
   // https://developers.google.com/search/docs/advanced/crawling/special-tags
@@ -36,12 +36,15 @@ export type LocaleInfo = {
   locales: Record<Locale, ViteSSGLocale>
 }
 
-export type I18nRouteMessageResolver = string | ((locale: Locale, route: ViteSSGLocale) => (Record<string, any> | Promise<Record<string, any>>))
+export type I18nGlobalMessageResolver = () => Record<string, any> | Promise<Record<string, any>>
+export type I18nRouteMessageResolver = (locale: ViteSSGLocale, to: RouteLocationNormalized) => (Record<string, any> | Promise<Record<string, any>> | undefined)
+export type HeadConfigurer = (route: RouteLocationNormalized, headObject: HeadObject, i18nComposer?: Composer<Record<string, any>, unknown, unknown>) => void
 
 export type CreateVueI18n = (
   ctx: ViteSSGContext<true>,
-  globalI18nMessageResolver?: () => Record<string, any> | Promise<Record<string, any>>,
+  globalMessageResolver?: I18nGlobalMessageResolver,
   routeMessageResolver?: I18nRouteMessageResolver,
+  headConfigurer?: HeadConfigurer,
 ) => Promise<I18n<Record<string, any>, unknown, unknown, false>>
 
 export interface I18nOptions {
