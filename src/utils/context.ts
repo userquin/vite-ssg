@@ -9,14 +9,22 @@ import { deserializeState, serializeState } from './state'
 function createViteSSGRouter(
   app: App,
   configuration: RouterConfiguration,
-): [Router, RouteRecordRaw[], LocaleInfo | undefined, CreateVueI18n | undefined] {
+  fn?: (context: ViteSSGContext<true>) => Promise<void> | void,
+): {
+    router: Router
+    routes: RouteRecordRaw[]
+    localeInfo?: LocaleInfo
+    createVueI18n?: CreateVueI18n
+    useFn?: (context: ViteSSGContext<true>) => Promise<void> | void
+  } {
   const { client, routerOptions, i18n } = configuration
   let router: Router
   let routes: RouteRecordRaw[] = routerOptions.routes
   let localeInfo: LocaleInfo | undefined
   let createVueI18n: CreateVueI18n | undefined
+
   if (i18n) {
-    [router, routes, localeInfo, createVueI18n] = createI18nRouter(configuration, i18n)
+    ({ router, routes, fn, localeInfo, createVueI18n } = createI18nRouter(configuration, i18n, fn))
   }
   else {
     router = createRouter({
@@ -29,7 +37,7 @@ function createViteSSGRouter(
 
   app.use(router)
 
-  return [router, routes, localeInfo, createVueI18n]
+  return { router, routes, useFn: fn, localeInfo, createVueI18n }
 }
 
 async function initializeState(
@@ -65,7 +73,7 @@ export async function initViteSSGContext(
 ): Promise<ViteSSGContext<true>> {
   const { client, i18n } = configuration
 
-  const [router, routes, localeInfo, createI18n] = createViteSSGRouter(app, configuration)
+  const { router, routes, useFn, localeInfo, createVueI18n } = createViteSSGRouter(app, configuration, fn)
 
   const context = await initializeState(
     app,
@@ -74,12 +82,13 @@ export async function initViteSSGContext(
     client,
     router,
     routes,
-    createI18n,
+    createVueI18n,
     localeInfo,
-    fn,
+    useFn,
     transformState,
   )
 
+  // i18n logic will be include on createViteSSGRouter: we only need to handle routing as original
   if (!i18n) {
     let entryRoutePath: string | undefined
     let isFirstRoute = true
