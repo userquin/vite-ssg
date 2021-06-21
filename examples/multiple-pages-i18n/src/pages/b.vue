@@ -57,6 +57,6 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <p>{{ t('pageb.title') }}</p>
-  <img src="../assets/test.jpg" :alt="t('pageb.imgtitle')">
+  <p>{{ t('/b.title') }}</p>
+  <img src="../assets/test.jpg" :alt="t('/b.imgtitle')">
 </template>
