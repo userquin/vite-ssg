@@ -1,5 +1,4 @@
 import { UserConfig } from 'vite'
-import {} from 'vite-ssg'
 import Markdown from 'vite-plugin-md'
 import Pages from 'vite-plugin-pages'
 import Components from 'vite-plugin-components'
