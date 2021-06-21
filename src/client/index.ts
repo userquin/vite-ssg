@@ -3,6 +3,7 @@ import { createHead } from '@vueuse/head'
 import { initializeI18n } from '../i18n/utils'
 import { initViteSSGContext } from '../utils/context'
 import { ClientOnly } from './components/ClientOnly'
+import { I18nRouterLink } from './components/I18nRouterLink'
 import type { RouterConfiguration } from '../utils/types'
 import type { HeadClient } from '@vueuse/head'
 import type { ViteSSGContext, ViteSSGClientOptions, RouterOptions } from '../types'
@@ -47,8 +48,11 @@ export function ViteSSG(
       app.use(head)
     }
 
-    if (registerComponents)
+    if (registerComponents) {
       app.component('ClientOnly', client ? ClientOnly : { render: () => null })
+      if (i18nInfo)
+        app.component('I18nRouterLink', I18nRouterLink)
+    }
 
     const configuration: RouterConfiguration = { client, isClient, routerOptions }
 
