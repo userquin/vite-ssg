@@ -5,9 +5,11 @@ import { HeadObject, useHead } from '@vueuse/head'
 import { WatchStopHandle } from '@vue/runtime-core'
 import { readonly } from '@vue/reactivity'
 import { AvailableLocale, ViteSSGLocale } from './types'
+import type { Ref } from 'vue'
 
 const localesKey = Symbol('vite-ssg:languages')
 const defaultLocaleKey = Symbol('vite-ssg:default-locale')
+const headObjectKey = Symbol('vite-ssg:heade-object')
 
 export function provideLocales(app: App, locales: Array<ViteSSGLocale>) {
   app.provide(localesKey, readonly(locales))
@@ -15,6 +17,18 @@ export function provideLocales(app: App, locales: Array<ViteSSGLocale>) {
 
 export function provideDefaultLocale(app: App, defaultLocale: ViteSSGLocale) {
   app.provide(defaultLocaleKey, defaultLocale)
+}
+
+export function injectDefaultLocale() {
+  return inject<ViteSSGLocale>(defaultLocaleKey)
+}
+
+export function provideHeadObject(app: App, headObject: Ref<HeadObject>) {
+  app.provide(headObjectKey, headObject)
+}
+
+export function injectHeadObject() {
+  return inject<Ref<HeadObject>>(headObjectKey)
 }
 
 export function useAvailableLocales() {
