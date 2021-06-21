@@ -56,12 +56,11 @@ export interface ViteSSGOptions {
   onPageRendered?: (route: string, renderedHTML: string) => Promise<string | null | undefined> | string | null | undefined
 
   onFinished?: () => void
+
   /**
-   * `vue-i18n@next` entry: read the docs for multi-page, since you will need to change your `index.html` template.
-   *
-   * Including this entry will force `useHead` to `true`.
+   * `vue-i18n@next` entry: read the docs for multi-page, you will need to change your `index.html` template.
    */
-  i18nOptions?: I18nOptions
+  i18nOptions?: () => Promise<I18nOptions> | I18nOptions
 
 }
 
@@ -97,12 +96,15 @@ export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAva
 
 // extend vue-router meta
 declare module 'vue-router' {
-  // @ts-ignore
   interface RouteMeta {
     /**
      * The original `path` without the `locale` prefix.
      */
     rawPath?: string
+    /**
+     * The original `path` without the `locale` prefix: for `/` will be `index`.
+     */
+    rawI18nPath?: string
     /**
      * The locale for the route.
      */
