@@ -46,25 +46,25 @@ export type CreateVueI18n = (
 
 export interface I18nOptions {
   /**
-     * Default locale for the application.
-     */
+   * Default locale for the application.
+   */
   defaultLocale: Locale
   /**
-     * The path variable to match the locale.
-     *
-     * @default 'locale'
-     */
+   * The path variable to match the locale.
+   *
+   * @default 'locale'
+   */
   localePathVariable?: string
   /**
    * The remote url for generating `crawling` info.
    */
   base?: string
   /**
-     * Locale and its description.
-     *
-     * The `locale description` should be in its own `locale`, for example:
-     *
-     * `'en-US': 'American English'` or `'es-ES': 'Español de España'`
-     */
+   * Locale and its description.
+   *
+   * The `locale description` should be in its own `locale`, for example:
+   *
+   * `'en-US': 'American English'` or `'es-ES': 'Español de España'`
+   */
   locales: Record<string, string>
 }
