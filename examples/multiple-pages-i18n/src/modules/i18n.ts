@@ -1,23 +1,38 @@
-// import { createI18n } from 'vue-i18n'
 import { ViteSSGContext } from 'vite-ssg'
 
 // import i18n resources
 // https://vitejs.dev/guide/features.html#glob-import
-const messages = Object.fromEntries(Object.entries(import.meta.globEager('../../locales/*.yml'))
+const globalMessages: any = Object.fromEntries(Object.entries(import.meta.globEager('../../locales/*.yml'))
   .map(([key, value]) => [key.slice(14, -4), value.default]),
 )
 
 export const install = (ctx: ViteSSGContext) => {
-  ctx.createI18n?.(ctx, () => messages, '../../locales/')
-
-  // const fallbackLocale = 'en'
-  // const i18n = createI18n({
-  //   legacy: false,
-  //   fallbackLocale,
-  //   locale: ctx.localeInfo?.current || fallbackLocale,
-  //   messages,
-  // })
-  // ctx.localeRef = i18n.global.locale
-  //
-  // ctx.app.use(i18n)
+  ctx.createI18n?.(
+    ctx,
+    globalMessages,
+    async(locale, to) => {
+      try {
+        const messagesModule = await import(/* @vite-ignore */ `../../locales/pages/${to.meta.rawI18nPath}.json5`)
+        // should use default
+        return messagesModule.default || messagesModule
+      }
+      catch (e) {
+        console.error('uppps', e)
+        return undefined
+      }
+    },
+    (route, headObject, pageMessages) => {
+      const meta = route.meta
+      if (meta && meta.injectI18nMeta) {
+        if (pageMessages) {
+          const key = `/${meta.rawI18nPath}`
+          if (pageMessages.te(`${key}.title`))
+            meta.title = pageMessages.t(`${key}.title`)
+          if (pageMessages.te(`${key}.description`))
+            meta.description = pageMessages.t(`${key}.description`)
+        }
+        meta.injectI18nMeta(headObject, route)
+      }
+    },
+  )
 }
