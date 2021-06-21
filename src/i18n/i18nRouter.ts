@@ -1,6 +1,13 @@
 import { Composer, createI18n, I18n } from 'vue-i18n'
 import { WritableComputedRef } from '@vue/reactivity'
-import { createMemoryHistory, createRouter, createWebHistory, RouteRecordRaw, RouterView } from 'vue-router'
+import {
+  createMemoryHistory,
+  createRouter,
+  createWebHistory, RouteLocationNormalized,
+  RouteLocationRaw,
+  RouteRecordRaw,
+  RouterView,
+} from 'vue-router'
 import { defineComponent, h } from 'vue'
 import { CreateVueI18n, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import { prepareHead } from './crawling'
@@ -135,30 +142,26 @@ export function createI18nRouter(
       })
       let entryRoutePath: string | undefined
       let isFirstRoute = true
+      const handleFirstEntry = (to: RouteLocationNormalized) => {
+        if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
+          // The first route is rendered in the server and its state is provided globally.
+          isFirstRoute = false
+          entryRoutePath = to.path
+          to.meta.state = context.initialState
+        }
+      }
       // we only need handle the route change on the client side
       // we have calculated yet the current lang for SSR and SSG
       if (client && isClient) {
-        // todo@userquin: include logic to change locale and load pages resources
         router.beforeEach(async(to, from, next) => {
-          if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
-            // The first route is rendered in the server and its state is provided globally.
-            isFirstRoute = false
-            entryRoutePath = to.path
-            to.meta.state = context.initialState
-          }
-
+          handleFirstEntry(to)
+          // todo@userquin: include logic to change locale and load pages resources
           next()
         })
       }
       else {
         router.beforeEach(async(to, from, next) => {
-          if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
-            // The first route is rendered in the server and its state is provided globally.
-            isFirstRoute = false
-            entryRoutePath = to.path
-            to.meta.state = context.initialState
-          }
-
+          handleFirstEntry(to)
           next()
         })
       }
