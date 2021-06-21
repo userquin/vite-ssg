@@ -4,7 +4,6 @@ import {
   createMemoryHistory,
   createRouter,
   createWebHistory, RouteLocationNormalized,
-  RouteLocationRaw,
   RouteRecordRaw,
   RouterView,
 } from 'vue-router'
@@ -13,7 +12,7 @@ import { CreateVueI18n, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } fr
 import { prepareHead } from './crawling'
 import { provideDefaultLocale, provideLocales } from './composables'
 import { detectClientLocale, detectServerLocale } from './utils'
-import type { RouterOptions, ViteSSGContext } from '../types'
+import type { ViteSSGContext } from '../types'
 import type { Router } from 'vue-router'
 import type { I18nConfigurationOptions, RouterConfiguration } from '../utils/types'
 
