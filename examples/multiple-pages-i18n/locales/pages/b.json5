@@ -2,14 +2,9 @@
   en: {
     "/b": {
       title: "Hello",
+      description: "Website description",
       imgtitle: "Image for hello I am B",
       crawling: {
-        meta: [
-          {
-            name: "description",
-            content: "Website description"
-          }
-        ],
         style: [
           {
             children: "body {'{'}color: #567839{'}'}"
@@ -21,14 +16,9 @@
   es: {
     "/b": {
       title: "Hola",
+      description: "Descripción del sitio web",
       imgtitle: "Imagen para hola I soy B",
       crawling: {
-        meta: [
-          {
-            name: "description",
-            content: "Descripción del sitio web"
-          }
-        ],
         style: [
           {
             children: "body {'{'}color: #567839{'}'}"
