@@ -7,11 +7,18 @@ import {
   RouteRecordRaw,
   RouterView,
 } from 'vue-router'
-import { defineComponent, h } from 'vue'
-import { CreateVueI18n, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
+import { defineComponent, h, ref } from 'vue'
+import { HeadObject } from '@vueuse/head'
+import { CreateVueI18n, HeadConfigurer, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import { prepareHead } from './crawling'
-import { provideDefaultLocale, provideLocales } from './composables'
-import { detectClientLocale, detectServerLocale } from './utils'
+import { provideDefaultLocale, provideHeadObject, provideLocales } from './composables'
+import {
+  configureClientNavigationGuards,
+  createLocalePathRoute,
+  detectClientLocale,
+  detectServerLocale,
+  handleFirstRouteEntryServer,
+} from './utils'
 import type { ViteSSGContext } from '../types'
 import type { Router } from 'vue-router'
 import type { I18nConfigurationOptions, RouterConfiguration } from '../utils/types'
@@ -23,13 +30,16 @@ function createI18nFactory(
   initialized: (
     context: ViteSSGContext<true>,
     i18n: I18n<Record<string, any>, unknown, unknown, false>,
+    globalMessages: Record<string, any> | undefined,
     routeMessageResolver?: I18nRouteMessageResolver,
+    headConfigurer?: HeadConfigurer,
   ) => Promise<void>,
 ): CreateVueI18n {
   return async(
     context: ViteSSGContext<true>,
     globalI18nMessageResolver,
     routeMessageResolver,
+    headConfigurer?: HeadConfigurer,
   ) => {
     const availableLocales = Array.from(localesMap.values())
 
@@ -53,10 +63,13 @@ function createI18nFactory(
 
     app.use(i18n)
 
-    await initialized(context, i18n, routeMessageResolver)
-
-    provideLocales(app, availableLocales)
-    provideDefaultLocale(app, localesMap.get(defaultLocale)!)
+    await initialized(
+      context,
+      i18n,
+      messages,
+      routeMessageResolver,
+      headConfigurer,
+    )
 
     return i18n
   }
@@ -65,7 +78,14 @@ function createI18nFactory(
 export function createI18nRouter(
   configuration: RouterConfiguration,
   i18nOptions: I18nConfigurationOptions,
-): [Router, RouteRecordRaw[], LocaleInfo | undefined, CreateVueI18n | undefined] {
+  fn?: (context: ViteSSGContext<true>) => Promise<void> | void,
+): {
+    router: Router
+    routes: RouteRecordRaw[]
+    localeInfo?: LocaleInfo
+    createVueI18n?: CreateVueI18n
+    fn?: (context: ViteSSGContext<true>) => Promise<void> | void
+  } {
   const { client, isClient, routerOptions, requestHeaders } = configuration
 
   let localeInfo: LocaleInfo
@@ -100,15 +120,16 @@ export function createI18nRouter(
     if (r.path.startsWith('/'))
       r.path = r.path.substring(1)
 
-    // see availableLocales: simplify handling there the path to change the locale
+    // see availableLocales: simplify handling there, the path to change the locale
     r.meta = r.meta || {}
     r.meta.rawPath = r.path
+    r.meta.rawI18nPath = r.path.length > 0 ? r.path : 'index'
 
     return r
   })
 
   const localeRoutes: RouteRecordRaw[] = [{
-    path: `/:${localePathVariable}?`,
+    path: createLocalePathRoute(localePathVariable),
     component: defineComponent({
       inheritAttrs: false,
       render() {
@@ -125,46 +146,77 @@ export function createI18nRouter(
     ...useRouterOptions,
     routes: localeRoutes,
   })
-  const createI18n = createI18nFactory(
+  const createVueI18n = createI18nFactory(
     localeInfo?.current || defaultLocale,
     defaultLocale,
     localesMap,
-    async(context, i18n, routeMessageResolver) => {
+    async(
+      context,
+      i18n,
+      globalMessages,
+      routeMessageResolver,
+      headConfigurer?: HeadConfigurer,
+    ) => {
       const localeRef: WritableComputedRef<string> = ((i18n.global as unknown) as Composer).locale
       const localesArray = Object.values(localeInfo.locales)
+      const headObject = ref<HeadObject>({})
+
+      const { app, head } = context
+
+      head!.addHeadObjs(headObject)
+
+      provideLocales(app, Array.from(localesMap.values()))
+      provideDefaultLocale(app, localesMap.get(defaultLocale)!)
+      provideHeadObject(app, headObject)
+
       children.forEach((r) => {
-        prepareHead(r, defaultLocale, localesArray, localeRef, base)
+        prepareHead(routerOptions, r, defaultLocale, localesArray, localeRef, base)
       })
+      // todo@userquin: this will be required?
       router.addRoute({
         path: '/:pathMatch(.*)*',
         redirect: () => '/',
       })
-      let entryRoutePath: string | undefined
-      let isFirstRoute = true
-      const handleFirstEntry = (to: RouteLocationNormalized) => {
-        if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
-          // The first route is rendered in the server and its state is provided globally.
-          isFirstRoute = false
-          entryRoutePath = to.path
-          to.meta.state = context.initialState
-        }
-      }
-      // we only need handle the route change on the client side
-      // we have calculated yet the current lang for SSR and SSG
+      // we only need handle the route logic on the client side
       if (client && isClient) {
-        router.beforeEach(async(to, from, next) => {
-          handleFirstEntry(to)
-          // todo@userquin: include logic to change locale and load pages resources
-          next()
-        })
+        configureClientNavigationGuards(
+          router,
+          head!,
+          headObject,
+          localeInfo,
+          defaultLocale,
+          localesMap,
+          localeRef,
+          i18n,
+          globalMessages,
+          routeMessageResolver,
+          headConfigurer,
+        )
       }
       else {
+        const handleFirstEntryServer = handleFirstRouteEntryServer(
+          context,
+          headObject,
+          defaultLocale,
+          localesMap,
+          localeRef,
+          i18n,
+          globalMessages,
+          routeMessageResolver,
+          headConfigurer,
+        )
         router.beforeEach(async(to, from, next) => {
-          handleFirstEntry(to)
+          await handleFirstEntryServer(to)
           next()
         })
       }
     },
   )
-  return [router, localeRoutes, localeInfo, createI18n]
+  // we need to provide a hook to initialize: the problem here is the SSR state
+  if (!fn) {
+    fn = (context) => {
+      context.createI18n?.(context)
+    }
+  }
+  return { router, routes: localeRoutes, localeInfo, createVueI18n, fn }
 }
