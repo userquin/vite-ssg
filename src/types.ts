@@ -1,5 +1,5 @@
 import { App } from 'vue'
-import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
+import { RouteLocationNormalized, Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
 import { HeadClient, HeadObject } from '@vueuse/head'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
 import { useAvailableLocales } from './i18n/composables'
@@ -97,6 +97,8 @@ export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAva
 // extend vue-router meta
 declare module 'vue-router' {
   interface RouteMeta {
+    title?: string
+    description?: string
     /**
      * The original `path` without the `locale` prefix.
      */
@@ -110,30 +112,38 @@ declare module 'vue-router' {
      */
     locale?: ViteSSGLocale
     /**
-     * Inject the following objects to `HeadObject` (to be used with `useHead`):
+     * Inject the following objects to `HeadObject`.
      *
      * 1) `lang` attribute for `html` element:
      * ```html
      * <html lang="en">
      * ```
-     * 2) Meta tag for `og:locale` for the current locale:
+     * 2) `title` head element from `route.meta.title`:
+     * ```html
+     * <title>TITLE</title>
+     * ```
+     * 3) `description` meta head from `route.meta.description`:
+     * ```html
+     * <meta name="description" content="<DESCRIPTION>">
+     * ```
+     * 4) Meta tag for `og:locale` for the current locale:
      * ```html
      * <meta property="og:locale" content="en">
      * ```
-     * 3) Meta tag to avoid browser showing page translation popup:
+     * 5) Meta tag to avoid browser showing page translation popup:
      * ```html
      * <meta name="google" content="notranslate">
      * ```
-     * 4) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
+     * 6) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
      * ```html
      * <link rel="alternate" hreflang="x-default" href="http://localhost:3000/route">
      * <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">
      * ```
      *
      * @param head The head object
-     * @param locale The current locale (`route.params.locale` or `createI18n.global.value` )
+     * @param newRoute The route to be configured
      */
-    injectI18nMeta?: (head: HeadObject) => HeadObject
+    injectI18nMeta?: (head: HeadObject, newRoute: RouteLocationNormalized) => HeadObject
     /**
      * Meta tags for alternative URLs.
      */
