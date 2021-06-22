@@ -88,11 +88,11 @@ export async function initViteSSGContext(
     transformState,
   )
 
-  // i18n logic will be include on createViteSSGRouter: we only need to handle routing as original
+  // i18n logic will be include on createViteSSGRouter: we only need to handle routing as the original
   if (!i18n) {
     let entryRoutePath: string | undefined
     let isFirstRoute = true
-    router.beforeEach((to, from, next) => {
+    router.beforeEach(async(to, from, next) => {
       if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
         // The first route is rendered in the server and its state is provided globally.
         isFirstRoute = false
@@ -100,18 +100,12 @@ export async function initViteSSGContext(
         to.meta.state = context.initialState
       }
 
-      next()
+      await next()
     })
   }
 
   if (!client) {
-    console.log(process.env.VITE_SSR)
-    console.log(process.env.VITE_SSG)
-    console.log(localeInfo && localeInfo.current)
-    console.log(i18n?.defaultLocale)
-    console.log(configuration.requestHeaders?.requestUrl)
-    console.log('-----------------------------')
-    if (configuration.requestHeaders?.requestUrl)
+    if (i18n && configuration.requestHeaders?.requestUrl)
       await router.push({ path: configuration.requestHeaders.requestUrl })
 
     else
