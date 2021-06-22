@@ -96,10 +96,10 @@ export function createI18nRouter(
   let base: string | undefined
   if (client && isClient) {
     localeInfo = detectClientLocale(defaultLocale, localesMap)
-    let baseRef = window.location.origin
-    if (baseRef.endsWith('/'))
-      baseRef = baseRef.substring(0, baseRef.length - 1)
-    base = routerOptions.base || '/'
+    base = window.location.origin
+    if (base.endsWith('/'))
+      base = base.substring(0, base.length - 1)
+    const baseRef = routerOptions.base || ''
     if (baseRef.startsWith('/'))
       base += baseRef
     else
@@ -107,6 +107,7 @@ export function createI18nRouter(
   }
   else {
     base = i18nOptions.base
+
     localeInfo = detectServerLocale(
       defaultLocale,
       localesMap,
@@ -157,7 +158,8 @@ export function createI18nRouter(
       routeMessageResolver,
       headConfigurer?: HeadConfigurer,
     ) => {
-      const localeRef: WritableComputedRef<string> = ((i18n.global as unknown) as Composer).locale
+      // const localeRef: WritableComputedRef<string> = ((i18n.global as unknown) as Composer).locale
+      const localeRef = i18n.global.locale
       const localesArray = Object.values(localeInfo.locales)
       const headObject = ref<HeadObject>({})
 

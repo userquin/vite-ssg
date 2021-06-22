@@ -38,7 +38,12 @@ export type LocaleInfo = {
 
 export type I18nGlobalMessageResolver = () => Record<string, any> | Promise<Record<string, any>>
 export type I18nRouteMessageResolver = (locale: ViteSSGLocale, to: RouteLocationNormalized) => (Record<string, any> | Promise<Record<string, any>> | undefined)
-export type HeadConfigurer = (route: RouteLocationNormalized, headObject: HeadObject, i18nComposer?: Composer<Record<string, any>, unknown, unknown>) => void
+export type HeadConfigurer = (
+  route: RouteLocationNormalized,
+  headObject: HeadObject,
+  i18nComposer: Composer<Record<string, any>, unknown, unknown>,
+  locale: ViteSSGLocale,
+) => void
 
 export type CreateVueI18n = (
   ctx: ViteSSGContext<true>,

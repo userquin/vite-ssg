@@ -133,7 +133,7 @@ export function detectServerLocale(
     if (useRequestUrl.length > 0) {
       const idx = useRequestUrl.indexOf('/')
       if (idx > 0) {
-        const locale = useRequestUrl.substring(idx)
+        const locale = useRequestUrl.substring(0, idx)
         if (localesMap.has(locale))
           current = locale
       }
@@ -157,6 +157,7 @@ function configureHead(
   to: RouteLocationNormalized,
   headObject: HeadObject,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
+  locale: ViteSSGLocale,
   headConfigurer?: HeadConfigurer,
 ) {
   if (headConfigurer) {
@@ -164,10 +165,11 @@ function configureHead(
       to,
       headObject,
       i18n.global,
+      locale,
     )
   }
   else {
-    to.meta.injectI18nMeta?.(headObject, to)
+    to.meta.injectI18nMeta?.(headObject, locale)
   }
 }
 
@@ -239,6 +241,7 @@ export function configureClientNavigationGuards(
     }
 
     const locale = localeMap.get(paramsLocale || defaultLocale)!
+
     await loadResourcesAndChangeLocale(
       locale,
       localeRef,
@@ -247,6 +250,19 @@ export function configureClientNavigationGuards(
       globalMessages,
       routeMessageResolver,
     )
+
+    if (flush) {
+      configureHead(
+        to,
+        headObject.value,
+        i18n,
+        locale,
+        headConfigurer,
+      )
+      await nextTick()
+      head.updateDOM(document)
+    }
+
     next()
   })
   // the head object is updated before step 11 on router navigation guard on the new route
@@ -255,6 +271,7 @@ export function configureClientNavigationGuards(
       to,
       headObject.value,
       i18n,
+      localeMap.get(localeRef.value)!,
       headConfigurer,
     )
     await nextTick()
@@ -276,10 +293,13 @@ export function handleFirstRouteEntryServer(
   let entryRoutePath: string | undefined
   let isFirstRoute = true
   return async(to) => {
+    console.log(`${to.path} => ${to.params.locale}`)
     const paramsLocale = to.params.locale as string || defaultLocale
 
+    const locale = localeMap.get(paramsLocale || defaultLocale)!
+
     await loadResourcesAndChangeLocale(
-      localeMap.get(paramsLocale)!,
+      locale,
       localeRef,
       i18n,
       to,
@@ -291,6 +311,7 @@ export function handleFirstRouteEntryServer(
       to,
       headObject.value,
       i18n,
+      locale,
       headConfigurer,
     )
 

@@ -22,7 +22,7 @@ export const install = (ctx: ViteSSGContext) => {
         return undefined
       }
     },
-    (route, headObject, pageMessages) => {
+    (route, headObject, pageMessages, locale) => {
       const meta = route.meta
       if (meta && meta.injectI18nMeta) {
         if (pageMessages) {
@@ -32,7 +32,7 @@ export const install = (ctx: ViteSSGContext) => {
           if (pageMessages.te(`${key}.description`))
             meta.description = pageMessages.t(`${key}.description`)
         }
-        meta.injectI18nMeta(headObject, route)
+        meta.injectI18nMeta(headObject, locale)
       }
     },
   )

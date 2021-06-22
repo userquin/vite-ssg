@@ -1,5 +1,5 @@
 import { App } from 'vue'
-import { RouteLocationNormalized, Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
+import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
 import { HeadClient, HeadObject } from '@vueuse/head'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
 import { useAvailableLocales } from './i18n/composables'
@@ -141,9 +141,9 @@ declare module 'vue-router' {
      * ```
      *
      * @param head The head object
-     * @param newRoute The route to be configured
+     * @param locale The current locale
      */
-    injectI18nMeta?: (head: HeadObject, newRoute: RouteLocationNormalized) => HeadObject
+    injectI18nMeta?: (head: HeadObject, locale: ViteSSGLocale) => HeadObject
     /**
      * Meta tags for alternative URLs.
      */

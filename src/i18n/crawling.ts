@@ -37,6 +37,9 @@ function addMetaTagsForAlternativeURLs(
     console.warn('vite-ssg:crawling: see https://developers.google.com/search/docs/advanced/crawling/localized-versions#all-method-guidelines!!!')
     console.warn('vite-ssg:crawling: ☝️ provide a base on configuration options for alternate urls, should include also transport (http/https)')
   }
+  if (!base.endsWith('/'))
+    base += '/'
+
   locales.reduce((acc, { locale }) => {
     acc[locale] = {
       tag: 'link',
@@ -76,15 +79,15 @@ export function prepareHead(
     return headers
   }
   if (route.meta) {
-    route.meta.injectI18nMeta = (head, newRoute: RouteLocationNormalized) => {
+    route.meta.injectI18nMeta = (head, locale) => {
       head.meta = head.meta || []
       const metaArray = isRef(head.meta) ? head.meta.value : head.meta
 
       // 1) `lang` attribute for `html` element
       head.htmlAttrs = {
-        lang: localeRef.value,
+        lang: locale.locale,
       }
-      const routeMeta = newRoute.meta
+      const routeMeta = route.meta
       if (routeMeta) {
         // 2) title
         if (routeMeta.title)
@@ -95,7 +98,7 @@ export function prepareHead(
           if (!description) {
             description = {
               name: 'description',
-              content: localeRef.value,
+              content: routeMeta.description,
             }
             metaArray.push(description)
           }
@@ -110,12 +113,12 @@ export function prepareHead(
       if (!ogLocale) {
         ogLocale = {
           property: 'og:locale',
-          content: localeRef.value,
+          content: locale.locale,
         }
         metaArray.push(ogLocale)
       }
       else {
-        ogLocale.content = localeRef.value
+        ogLocale.content = locale.locale
       }
 
       // 5) Meta tag to avoid browser showing page translation popup

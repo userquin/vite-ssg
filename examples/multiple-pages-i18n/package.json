@@ -3,7 +3,8 @@
   "scripts": {
     "dev": "cross-env DEBUG=vite-ssg:* vite",
     "build": "cross-env DEBUG=vite-ssg:* I18N_BASE=https://localhost:3000 vite-ssg build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "build-serve": "npm run build && npm run serve"
   },
   "dependencies": {
     "vue": "^3.1.1",

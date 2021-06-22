@@ -105,15 +105,17 @@ export async function initViteSSGContext(
   }
 
   if (!client) {
-    if (i18n) {
-      if (localeInfo && localeInfo.current !== i18n.defaultLocale)
-        router.push({ path: `${configuration.routerOptions.base || '/'}${localeInfo.current}/` })
-      else
-        router.push(configuration.routerOptions.base || '/')
-    }
-    else {
-      router.push(configuration.routerOptions.base || '/')
-    }
+    console.log(process.env.VITE_SSR)
+    console.log(process.env.VITE_SSG)
+    console.log(localeInfo && localeInfo.current)
+    console.log(i18n?.defaultLocale)
+    console.log(configuration.requestHeaders?.requestUrl)
+    console.log('-----------------------------')
+    if (configuration.requestHeaders?.requestUrl)
+      await router.push({ path: configuration.requestHeaders.requestUrl })
+
+    else
+      await router.push(configuration.routerOptions.base || '/')
 
     await router.isReady()
     context.initialState = router.currentRoute.value.meta.state as Record<string, any> || {}
