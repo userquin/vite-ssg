@@ -1,9 +1,8 @@
-import { Composer, createI18n, I18n } from 'vue-i18n'
-import { WritableComputedRef } from '@vue/reactivity'
+import { createI18n, I18n } from 'vue-i18n'
 import {
   createMemoryHistory,
   createRouter,
-  createWebHistory, RouteLocationNormalized,
+  createWebHistory,
   RouteRecordRaw,
   RouterView,
 } from 'vue-router'
@@ -13,11 +12,11 @@ import { CreateVueI18n, HeadConfigurer, I18nRouteMessageResolver, LocaleInfo, Vi
 import { prepareHead } from './crawling'
 import { provideDefaultLocale, provideHeadObject, provideLocales } from './composables'
 import {
-  configureClientNavigationGuards,
   createLocalePathRoute,
   detectClientLocale,
   detectServerLocale,
-  handleFirstRouteEntryServer,
+  configureClientNavigationGuards,
+  configureRouteEntryServer,
 } from './utils'
 import type { ViteSSGContext } from '../types'
 import type { Router } from 'vue-router'
@@ -196,7 +195,8 @@ export function createI18nRouter(
         )
       }
       else {
-        const handleFirstEntryServer = handleFirstRouteEntryServer(
+        configureRouteEntryServer(
+          router,
           context,
           headObject,
           defaultLocale,
@@ -207,10 +207,6 @@ export function createI18nRouter(
           routeMessageResolver,
           headConfigurer,
         )
-        router.beforeEach(async(to, from, next) => {
-          await handleFirstEntryServer(to)
-          next()
-        })
       }
     },
   )
