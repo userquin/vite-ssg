@@ -11,7 +11,7 @@ import type { I18n, Locale } from 'vue-i18n'
 import type { HeadClient, HeadObject } from '@vueuse/head'
 
 export function detectClientLocale(defaultLocale: string, localesMap: Map<string, ViteSSGLocale>): LocaleInfo {
-  // todo@userquin: add cookie handling
+  // todo@userquin: add cookie handling?
   // navigator.languages:    Chrome & FF
   // navigator.language:     Safari & Others
   // navigator.userLanguage: IE & Others
@@ -218,10 +218,10 @@ export function configureClientNavigationGuards(
   headConfigurer?: HeadConfigurer,
 ) {
   let isFirstRoute = true
+  const isFirstRouteAfterEach = true
   router.beforeEach(async(to, from, next) => {
     const paramsLocale = to.params.locale as string
 
-    const flush = isFirstRoute
     if ((paramsLocale && !localeMap.has(paramsLocale)) || isFirstRoute) {
       let rawPath = to.meta.rawPath!
       if (rawPath.length > 0)
@@ -251,22 +251,15 @@ export function configureClientNavigationGuards(
       routeMessageResolver,
     )
 
-    if (flush) {
-      configureHead(
-        to,
-        headObject.value,
-        i18n,
-        locale,
-        headConfigurer,
-      )
-      await nextTick()
-      head.updateDOM(document)
-    }
-
     next()
   })
   // the head object is updated before step 11 on router navigation guard on the new route
   router.afterEach(async(to) => {
+    // if (isFirstRouteAfterEach) {
+    //   isFirstRouteAfterEach = false
+    // todo@userquin: we need to check if SSR then done otherwise we need to inject the header
+    // }
+    // else {
     configureHead(
       to,
       headObject.value,
@@ -276,6 +269,7 @@ export function configureClientNavigationGuards(
     )
     await nextTick()
     head.updateDOM(document)
+    // }
   })
 }
 
