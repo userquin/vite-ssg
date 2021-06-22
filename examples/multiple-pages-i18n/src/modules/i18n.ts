@@ -12,7 +12,8 @@ export const install = (ctx: ViteSSGContext) => {
     globalMessages,
     async(locale, to) => {
       try {
-        const messagesModule = await import(/* @vite-ignore */ `../../locales/pages/${to.meta.rawI18nPath}.json5`)
+        const messagesModule = await import(/* @vite-ignore */ `../pages/${to.meta.rawI18nPath}.json5`)
+        // const messagesModule = await import(/* @vite-ignore */ `../../locales/pages/${to.meta.rawI18nPath}.json5`)
         // should use default
         return messagesModule.default || messagesModule
       }

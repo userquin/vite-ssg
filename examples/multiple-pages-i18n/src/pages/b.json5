@@ -1,0 +1,30 @@
+{
+  en: {
+    "/b": {
+      title: "Hello",
+      description: "Website description",
+      imgtitle: "Image for hello I am B",
+      crawling: {
+        style: [
+          {
+            children: "body {'{'}color: #567839{'}'}"
+          }
+        ]
+      },
+    },
+  },
+  es: {
+    "/b": {
+      title: "Hola",
+      description: "Descripción del sitio web",
+      imgtitle: "Imagen para hola I soy B",
+      crawling: {
+        style: [
+          {
+            children: "body {'{'}color: #567839{'}'}"
+          }
+        ]
+      },
+    },
+  }
+}
