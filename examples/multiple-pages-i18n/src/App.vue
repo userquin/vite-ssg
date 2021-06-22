@@ -2,40 +2,6 @@
 import { useAvailableLocales } from 'vite-ssg'
 
 const { availableLocales, route } = useAvailableLocales()
-
-// useI18nHead(async(locale) => {
-//   console.log(`LOCALE RELOAD: ${locale.locale}`)
-//   try {
-//     let modules = await import(/* @vite-ignore */ `../locales/pages/${route.meta.rawPath}.yml`)
-//     let page = modules.default[locale.locale]
-//
-//     console.log('YAML')
-//     console.log(page)
-//
-//     modules = await import(/* @vite-ignore */ `../locales/pages/${route.meta.rawPath}.json5`)
-//     page = modules.default[locale.locale]
-//
-//     console.log('JSON5')
-//     console.log(page)
-//   }
-//   catch (err) {
-//     console.error('upps', err)
-//   }
-//   return {
-//     title: 'Hello',
-//     meta: [
-//       {
-//         name: 'description',
-//         content: 'Website description',
-//       },
-//     ],
-//     style: [
-//       {
-//         children: 'body {color: #567839}',
-//       },
-//     ],
-//   }
-// })
 </script>
 
 <template>
