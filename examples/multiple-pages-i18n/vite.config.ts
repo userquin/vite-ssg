@@ -10,6 +10,9 @@ import i18nOptions from './ssg-i18n-options.json'
 const pages = new Map<string, number>()
 
 const config: UserConfig = {
+  build: {
+    manifest: !process.env.VITE_SSG,
+  },
   plugins: [
     Vue({
       include: [/\.vue$/, /\.md$/],
@@ -25,7 +28,11 @@ const config: UserConfig = {
     }),
     // https://github.com/intlify/vite-plugin-vue-i18n
     VueI18n({
-      include: [path.resolve(__dirname, 'locales/**'), path.resolve(__dirname, 'locales/pages/**')],
+      include: [
+        path.resolve(__dirname, 'locales/**'),
+        path.resolve(__dirname, 'locales/pages/**'),
+        path.resolve(__dirname, 'src/pages/**'),
+      ],
     }),
 
   ],
