@@ -1,59 +1,70 @@
+<i18n src="./b.json5"></i18n>
+<!-- 👇 see below alternatives -->
+<!--<i18n src="../../locales/pages/b.json5"></i18n>-->
+<!--<i18n src="../../locales/pages/b.yml"></i18n>-->
+<!--
+<i18n lang="json5">
+{
+  "en": {
+    "/b": {
+      "title": "Hello",
+      "description": "Website description",
+      "imgtitle": "Image for hello I am B",
+      "crawling": {
+        "style": [
+          {
+            "children": "body {'{'}color: #567839{'}'}"
+          }
+        ]
+      },
+    },
+  },
+  "es": {
+    "/b": {
+      "title": "Hola",
+      "description": "Descripción del sitio web",
+      "imgtitle": "Imagen para hola I soy B",
+      "crawling": {
+        "style": [
+          {
+            "children": "body {'{'}color: #567839{'}'}"
+          }
+        ]
+      },
+    },
+  }
+}
+</i18n>
+-->
+<!--
+<i18n lang="yml">
+en:
+  /b:
+    title: Hello
+    description: Website description
+    imgtitle: Image for hello I am B
+    crawling:
+      style:
+        - children: "body {'{'}color: #567839{'}'}"
+
+es:
+  /b:
+    title: Hola
+    description: Descripción del sitio web
+    imgtitle: Imagen para hola soy B
+    crawling:
+      style:
+        - children: "body {'{'}color: #567839{'}'}"
+</i18n>
+-->
+
 <script setup lang="ts">
-// import { computed } from 'vue'
-// import { useHead } from '@vueuse/head'
 import { useI18n } from 'vue-i18n'
-// import { useRoute } from 'vue-router'
 import { defineProps } from 'vue'
-// import type { HeadObject } from '@vueuse/head'
 
 const props = defineProps({ locale: String })
 
 const { t } = useI18n()
-
-// useI18nHead({
-//   title: 'Hello',
-//   meta: [
-//     {
-//       name: 'description',
-//       content: 'Website description',
-//     },
-//   ],
-//   style: [
-//     {
-//       children: 'body {color: #567839}',
-//     },
-//   ],
-// })
-//
-// const route = useRoute()
-//
-// const headObject = computed<HeadObject>(() => {
-//   const locale = route.params.locale
-//   const meta = [
-//     {
-//       name: 'description',
-//       content: 'Website description',
-//     },
-//   ]
-//   const head: HeadObject = {
-//     title: 'Hello',
-//     meta,
-//     style: [
-//       {
-//         children: 'body {color: #567839}',
-//       },
-//     ],
-//   }
-//
-//   route.meta?.injectI18nMeta?.(head)
-//
-//   console.log(head)
-//
-//   return head
-// })
-//
-// useHead(headObject)
-
 </script>
 
 <template>
