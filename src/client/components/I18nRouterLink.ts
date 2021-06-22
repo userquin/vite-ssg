@@ -1,6 +1,6 @@
 import { defineComponent, h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LocationAsPath, RouteLocationRaw, RouterLink, RouterLinkProps } from 'vue-router'
+import { LocationAsPath, RouterLink } from 'vue-router'
 import { injectDefaultLocale } from '../../i18n/composables'
 
 export const I18nRouterLink = defineComponent({
