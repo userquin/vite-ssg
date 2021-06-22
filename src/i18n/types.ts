@@ -3,6 +3,7 @@ import { ViteSSGContext } from '../types'
 import type { Locale } from 'vue-i18n'
 import type { HeadAttrs, HeadObject } from '@vueuse/head'
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
+import type { Ref } from 'vue'
 
 export type Crawling = {
   // https://developers.google.com/search/docs/advanced/crawling/special-tags
@@ -37,13 +38,18 @@ export type LocaleInfo = {
 }
 
 export type I18nGlobalMessageResolver = () => Record<string, any> | Promise<Record<string, any>>
-export type I18nRouteMessageResolver = (locale: ViteSSGLocale, to: RouteLocationNormalized) => (Record<string, any> | Promise<Record<string, any>> | undefined)
+
+export type I18nRouteMessageResolver = (
+  locale: ViteSSGLocale,
+  to: RouteLocationNormalized
+) => (Record<string, any> | Promise<Record<string, any>> | undefined)
+
 export type HeadConfigurer = (
   route: RouteLocationNormalized,
-  headObject: HeadObject,
+  headObject: Ref<HeadObject>,
   i18nComposer: Composer<Record<string, any>, unknown, unknown>,
   locale: ViteSSGLocale,
-) => void
+) => Promise<boolean> | boolean
 
 export type CreateVueI18n = (
   ctx: ViteSSGContext<true>,
