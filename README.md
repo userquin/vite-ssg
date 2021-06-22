@@ -295,6 +295,11 @@ export default {
 }
 ```
 
+## WIP vue-i18n
+
+todo@userquin
+
+
 ## Comparsion
 
 ### Use [Vitepress](https://github.com/vuejs/vitepress) when you want:
@@ -308,6 +313,7 @@ export default {
 - More controls on the build process and tooling
 - The flexible plugin systems
 - Multi-purpose application with some SSG to improve SEO and loading speed
+- Multi-language support with a single codebase
 
 Cons:
 
