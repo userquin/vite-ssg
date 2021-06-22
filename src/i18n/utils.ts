@@ -153,24 +153,24 @@ export function detectServerLocale(
   }
 }
 
-function configureHead(
+async function configureHead(
   to: RouteLocationNormalized,
-  headObject: HeadObject,
+  headObject: Ref<HeadObject>,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   locale: ViteSSGLocale,
   headConfigurer?: HeadConfigurer,
 ) {
+  let resolved = false
   if (headConfigurer) {
-    headConfigurer(
+    resolved = await headConfigurer(
       to,
       headObject,
       i18n.global,
       locale,
     )
   }
-  else {
-    to.meta.injectI18nMeta?.(headObject, locale)
-  }
+  if (!resolved)
+    to.meta.injectI18nMeta?.(headObject.value, locale)
 }
 
 export async function loadResourcesAndChangeLocale(
@@ -230,12 +230,12 @@ export function configureClientNavigationGuards(
         isFirstRoute = false
         const locale = paramsLocale || defaultLocale
         if (locale !== localeRef.value) {
-          next({ path: `/${localeInfo.current}${rawPath}`, force: true })
+          await next({ path: `/${localeInfo.current}${rawPath}`, force: true })
           return
         }
       }
       else {
-        next({ path: `/${localeRef.value}`, force: true })
+        await next({ path: `/${localeRef.value}`, force: true })
         return
       }
     }
@@ -251,7 +251,7 @@ export function configureClientNavigationGuards(
       routeMessageResolver,
     )
 
-    next()
+    await next()
   })
   // the head object is updated before step 11 on router navigation guard on the new route
   router.afterEach(async(to) => {
@@ -260,9 +260,9 @@ export function configureClientNavigationGuards(
     // todo@userquin: we need to check if SSR then done otherwise we need to inject the header
     // }
     // else {
-    configureHead(
+    await configureHead(
       to,
-      headObject.value,
+      headObject,
       i18n,
       localeMap.get(localeRef.value)!,
       headConfigurer,
@@ -273,7 +273,8 @@ export function configureClientNavigationGuards(
   })
 }
 
-export function handleFirstRouteEntryServer(
+export function configureRouteEntryServer(
+  router: Router,
   context: ViteSSGContext<true>,
   headObject: Ref<HeadObject>,
   defaultLocale: string,
@@ -283,11 +284,10 @@ export function handleFirstRouteEntryServer(
   globalMessages: Record<string, any> | undefined,
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
-): ((to: RouteLocationNormalized) => Promise<void>) {
+) {
   let entryRoutePath: string | undefined
   let isFirstRoute = true
-  return async(to) => {
-    console.log(`${to.path} => ${to.params.locale}`)
+  router.beforeEach(async(to, from, next) => {
     const paramsLocale = to.params.locale as string || defaultLocale
 
     const locale = localeMap.get(paramsLocale || defaultLocale)!
@@ -301,9 +301,9 @@ export function handleFirstRouteEntryServer(
       routeMessageResolver,
     )
 
-    configureHead(
+    await configureHead(
       to,
-      headObject.value,
+      headObject,
       i18n,
       locale,
       headConfigurer,
@@ -315,5 +315,7 @@ export function handleFirstRouteEntryServer(
       entryRoutePath = to.path
       to.meta.state = context.initialState
     }
-  }
+
+    await next()
+  })
 }
