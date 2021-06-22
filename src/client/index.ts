@@ -1,8 +1,9 @@
-import { createSSRApp, Component, createApp as createClientApp } from 'vue'
+import { createSSRApp, Component, createApp as createClientApp, defineComponent } from 'vue'
 import { createHead } from '@vueuse/head'
 import { initializeI18n } from '../i18n/utils'
 import { initViteSSGContext } from '../utils/context'
 import { ClientOnly } from './components/ClientOnly'
+import { I18nRouterLink } from './components/I18nRouterLink'
 import type { RouterConfiguration } from '../utils/types'
 import type { HeadClient } from '@vueuse/head'
 import type { ViteSSGContext, ViteSSGClientOptions, RouterOptions } from '../types'
@@ -48,14 +49,9 @@ export function ViteSSG(
     }
 
     if (registerComponents) {
-      if (client)
-        app.component('ClientOnly', () => import('./components/ClientOnly'))
-
-      else
-        app.component('ClientOnly', { render: () => null })
-
+      app.component('ClientOnly', client ? ClientOnly : { render: () => null })
       if (i18nInfo)
-        app.component('I18nRouterLink', () => import('./components/I18nRouterLink'))
+        app.component('I18nRouterLink', I18nRouterLink)
     }
 
     const configuration: RouterConfiguration = { client, isClient, routerOptions }
