@@ -1,24 +1,19 @@
 import { defineComponent, h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LocationAsPath, RouterLink } from 'vue-router'
+import { RouteLocationRaw, RouterLink, useRouter } from 'vue-router'
 import { injectDefaultLocale } from '../../i18n/composables'
+import { resolveNewRawLocationRoute } from '../../i18n/utils'
 
 export const I18nRouterLink = defineComponent({
   inheritAttrs: false,
   setup(_, { attrs, slots }) {
-    const { locale } = useI18n({ useScope: 'global' })
     const defaultLocale = injectDefaultLocale()!
+    const router = useRouter()
+    const { locale } = useI18n({ useScope: 'global' })
     return () => {
-      let to: string | LocationAsPath = attrs.to as any
-
-      if (locale.value !== defaultLocale.locale) {
-        if (typeof to === 'string')
-          to = `/${locale.value}/${to.startsWith('/') ? to.substring(1) : to}`
-        else
-          to.path = `/${locale.value}/${to.path.startsWith('/') ? to.path.substring(1) : to.path}`
-      }
-
-      return h(RouterLink, { ...attrs, to }, slots)
+      return h(RouterLink, {
+        to: resolveNewRawLocationRoute(router, attrs.to as RouteLocationRaw, defaultLocale, locale.value),
+      }, slots)
     }
   },
 })

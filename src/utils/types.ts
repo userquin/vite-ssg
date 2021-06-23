@@ -5,6 +5,7 @@ export type I18nConfigurationOptions = {
   localesMap: Map<string, ViteSSGLocale>
   defaultLocale: string
   localePathVariable: string
+  cookieName: string
   base?: string
 }
 

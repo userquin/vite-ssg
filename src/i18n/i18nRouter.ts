@@ -16,7 +16,7 @@ import {
   detectClientLocale,
   detectServerLocale,
   configureClientNavigationGuards,
-  configureRouteEntryServer,
+  configureRouteEntryServer, normalizeLocalePathVariable,
 } from './utils'
 import type { ViteSSGContext } from '../types'
 import type { Router } from 'vue-router'
@@ -91,10 +91,10 @@ export function createI18nRouter(
   // eslint-disable-next-line prefer-const
   let { routes, ...useRouterOptions } = routerOptions
 
-  const { localesMap, defaultLocale, localePathVariable } = i18nOptions
+  const { localesMap, defaultLocale, localePathVariable, cookieName } = i18nOptions
   let base: string | undefined
   if (client && isClient) {
-    localeInfo = detectClientLocale(defaultLocale, localesMap)
+    localeInfo = detectClientLocale(cookieName, defaultLocale, localesMap)
     base = window.location.origin
     if (base.endsWith('/'))
       base = base.substring(0, base.length - 1)
@@ -120,16 +120,16 @@ export function createI18nRouter(
     if (r.path.startsWith('/'))
       r.path = r.path.substring(1)
 
-    // see availableLocales: simplify handling there, the path to change the locale
+    // we create the meta
     r.meta = r.meta || {}
-    r.meta.rawPath = r.path
-    r.meta.rawI18nPath = r.path.length > 0 ? r.path : 'index'
 
     return r
   })
 
+  const normalizedLocalePathVariable = normalizeLocalePathVariable(localePathVariable)
+
   const localeRoutes: RouteRecordRaw[] = [{
-    path: createLocalePathRoute(localePathVariable),
+    path: createLocalePathRoute(normalizedLocalePathVariable),
     component: defineComponent({
       inheritAttrs: false,
       render() {
@@ -139,6 +139,7 @@ export function createI18nRouter(
     children,
   }]
 
+  // create the router
   const router = createRouter({
     history: client
       ? createWebHistory(routerOptions.base)
@@ -146,6 +147,8 @@ export function createI18nRouter(
     ...useRouterOptions,
     routes: localeRoutes,
   })
+
+  // prepare i18n callback
   const createVueI18n = createI18nFactory(
     localeInfo?.current || defaultLocale,
     defaultLocale,
@@ -157,27 +160,40 @@ export function createI18nRouter(
       routeMessageResolver,
       headConfigurer?: HeadConfigurer,
     ) => {
-      // const localeRef: WritableComputedRef<string> = ((i18n.global as unknown) as Composer).locale
       const localeRef = i18n.global.locale
       const localesArray = Object.values(localeInfo.locales)
       const headObject = ref<HeadObject>({})
 
       const { app, head } = context
 
-      head!.addHeadObjs(headObject)
-
-      provideLocales(app, Array.from(localesMap.values()))
-      provideDefaultLocale(app, localesMap.get(defaultLocale)!)
-      provideHeadObject(app, headObject)
-
+      // prepare head for each route and check for top dynamic routes
+      let hasDynamicRoutes = false
       children.forEach((r) => {
         prepareHead(routerOptions, r, defaultLocale, localesArray, localeRef, base)
+        hasDynamicRoutes = hasDynamicRoutes || r.path.startsWith(':') || r.path.includes('*')
       })
-      // todo@userquin: this will be required?
-      router.addRoute({
-        path: '/:pathMatch(.*)*',
-        redirect: () => '/',
-      })
+
+      // build the default locale info
+      const defaultViteSSGLocale = {
+        ...localesMap.get(defaultLocale)!,
+        path: hasDynamicRoutes ? defaultLocale : '',
+        localePathVariable: normalizedLocalePathVariable,
+      }
+
+      // provide some helpers
+      provideLocales(app, Array.from(localesMap.values()))
+      provideHeadObject(app, headObject)
+      provideDefaultLocale(app, defaultViteSSGLocale)
+
+      // warn the user if we need to change path for default locale
+      if (hasDynamicRoutes) {
+        console.warn('vite-ssg:routes: you have at least a top route that is dynamic, the default locale will be shown on the url')
+        console.warn(`vite-ssg:routes: ☝ the default locale should be /, with your routes, we need to change to /${defaultLocale}/`)
+      }
+
+      // register the head object
+      head!.addHeadObjs(headObject)
+
       // we only need handle the route logic on the client side
       if (client && isClient) {
         configureClientNavigationGuards(
@@ -185,11 +201,14 @@ export function createI18nRouter(
           head!,
           headObject,
           localeInfo,
-          defaultLocale,
+          defaultViteSSGLocale,
           localesMap,
           localeRef,
+          cookieName,
+          routerOptions.base || '/',
           i18n,
           globalMessages,
+          localeInfo.firstDetection,
           routeMessageResolver,
           headConfigurer,
         )
@@ -210,11 +229,13 @@ export function createI18nRouter(
       }
     },
   )
-  // we need to provide a hook to initialize: the problem here is the SSR state
+  // we need to provide a hook to initialize if the user omit it
   if (!fn) {
     fn = (context) => {
       context.createI18n?.(context)
     }
   }
+
+  // return i18n stuff
   return { router, routes: localeRoutes, localeInfo, createVueI18n, fn }
 }

@@ -1,17 +1,15 @@
-import { NavigationGuardNext, RouteLocationNormalized, Router } from 'vue-router'
+import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import { WritableComputedRef } from '@vue/reactivity'
 import { nextTick } from 'vue'
-import { Composer } from 'vue-i18n'
 import { ViteSSGContext } from '../types'
-import { HeadConfigurer } from './types'
+import { DefaultViteSSGLocale, HeadConfigurer } from './types'
 import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
 import type { I18nOptions, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
 import type { HeadClient, HeadObject } from '@vueuse/head'
 
-export function detectClientLocale(defaultLocale: string, localesMap: Map<string, ViteSSGLocale>): LocaleInfo {
-  // todo@userquin: add cookie handling?
+export function detectPreferredClientLocale(defaultLocale: Locale, localesMap: Map<string, ViteSSGLocale>) {
   // navigator.languages:    Chrome & FF
   // navigator.language:     Safari & Others
   // navigator.userLanguage: IE & Others
@@ -19,10 +17,39 @@ export function detectClientLocale(defaultLocale: string, localesMap: Map<string
   const languages = navigator.languages || [navigator.language || navigator.userLanguage]
 
   // lookup current or use default
-  const current = languages.find(l => localesMap.has(l)) || defaultLocale
+  return languages.find(l => localesMap.has(l)) || defaultLocale
+}
+
+export function detectClientLocale(cookieName: string, defaultLocale: string, localesMap: Map<string, ViteSSGLocale>): LocaleInfo {
+  let current: Locale | undefined
+  let firstDetection = true
+
+  // check for cookie present
+  const cookie = new Map<string, string>(
+    document.cookie.split('; ').map((c) => {
+      const [name, value] = c.split('=')
+      return [name, value]
+    }),
+  ).get(cookieName)
+
+  if (cookie && localesMap.has(cookie)) {
+    current = cookie
+    firstDetection = false
+  }
+  else {
+    // navigator.languages:    Chrome & FF
+    // navigator.language:     Safari & Others
+    // navigator.userLanguage: IE & Others
+    // @ts-ignore
+    const languages = navigator.languages || [navigator.language || navigator.userLanguage]
+
+    // lookup current or use default
+    current = detectPreferredClientLocale(defaultLocale, localesMap)
+  }
 
   return {
     current,
+    firstDetection,
     locales: Array.from(localesMap.keys()).reduce((acc, locale) => {
       acc[locale] = localesMap.get(locale)!
       return acc
@@ -74,6 +101,7 @@ export function initializeI18n(base?: string, i18nOptions?: I18nOptions): {
         defaultLocale: i18nOptions.defaultLocale,
         localePathVariable,
         base,
+        cookieName: i18nOptions.cookieName || 'VITE-SSG-LOCALE',
       },
     }
   }
@@ -146,6 +174,8 @@ export function detectServerLocale(
 
   return {
     current: current || defaultLocale,
+    // @todo@userquin: for SSR enabled middleware??
+    firstDetection: false,
     locales: Array.from(localesMap.keys()).reduce((acc, locale) => {
       acc[locale] = localesMap.get(locale)!
       return acc
@@ -180,6 +210,10 @@ export async function loadResourcesAndChangeLocale(
   to: RouteLocationNormalized,
   globalMessages: Record<string, any> | undefined,
   routeMessageResolver?: I18nRouteMessageResolver,
+  cookieInfo?: {
+    name: string
+    base: string
+  },
 ) {
   // load locale messages
   const localeCode = locale.locale
@@ -202,6 +236,37 @@ export async function loadResourcesAndChangeLocale(
   localeRef.value = localeCode
 
   await nextTick()
+
+  if (cookieInfo) {
+    const { name, base } = cookieInfo
+    document.cookie = `${name}=${localeCode};path=${base}; SameSite=Strict`
+  }
+}
+
+export function resolveNewRouteLocationNormalized(
+  router: Router,
+  defaultLocale: DefaultViteSSGLocale,
+  currentLocale: Locale,
+  route?: RouteLocationNormalized,
+) {
+  const { path, localePathVariable } = defaultLocale
+
+  const params = {} as any
+  if (currentLocale === defaultLocale.locale)
+    params[`${localePathVariable}`] = path
+  else
+    params[`${localePathVariable}`] = currentLocale
+
+  return router.resolve({ params }, route)
+}
+
+export function resolveNewRawLocationRoute(
+  router: Router,
+  to: RouteLocationRaw,
+  defaultLocale: DefaultViteSSGLocale,
+  currentLocale: Locale,
+) {
+  return resolveNewRouteLocationNormalized(router, defaultLocale, currentLocale, router.resolve(to)).fullPath
 }
 
 export function configureClientNavigationGuards(
@@ -209,38 +274,67 @@ export function configureClientNavigationGuards(
   head: HeadClient,
   headObject: Ref<HeadObject>,
   localeInfo: LocaleInfo,
-  defaultLocale: string,
+  defaultLocale: DefaultViteSSGLocale,
   localeMap: Map<string, ViteSSGLocale>,
   localeRef: WritableComputedRef<Locale>,
+  cookieName: string,
+  cookieBase: string,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   globalMessages: Record<string, any> | undefined,
+  requiresHandlingFirstRoute: boolean,
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
 ) {
-  let isFirstRoute = true
-  const isFirstRouteAfterEach = true
+  const { path } = defaultLocale
+  const requiredLocaleParam = path.length > 0
+  const cookieInfo = {
+    name: cookieName,
+    base: cookieBase,
+  }
+
+  // handle bad locale or missing required locale
   router.beforeEach(async(to, from, next) => {
     const paramsLocale = to.params.locale as string
 
-    if ((paramsLocale && !localeMap.has(paramsLocale)) || isFirstRoute) {
-      let rawPath = to.meta.rawPath!
-      if (rawPath.length > 0)
-        rawPath = `/${rawPath}`
+    if ((paramsLocale && !localeMap.has(paramsLocale)) || (!paramsLocale && requiredLocaleParam)) {
+      await next(resolveNewRouteLocationNormalized(
+        router,
+        defaultLocale,
+        requiresHandlingFirstRoute
+          ? detectPreferredClientLocale(defaultLocale.locale, localeMap)
+          : localeRef.value,
+        to,
+      ).fullPath)
+    }
+    else {
+      await next()
+    }
+  })
+
+  // handle initial request calculating forwarding/redirecting to preferred locale
+  if (requiresHandlingFirstRoute) {
+    let isFirstRoute = true
+    router.beforeEach(async(to, from, next) => {
+      const paramsLocale = to.params.locale as string || defaultLocale
       if (isFirstRoute) {
-        isFirstRoute = false
-        const locale = paramsLocale || defaultLocale
-        if (locale !== localeRef.value) {
-          await next({ path: `/${localeInfo.current}${rawPath}`, force: true })
-          return
-        }
+        isFirstRoute = true
+        const currentLocale = localeRef.value
+        if (paramsLocale !== currentLocale)
+          await next(resolveNewRouteLocationNormalized(router, defaultLocale, currentLocale, to).fullPath)
+        else
+          await next()
       }
       else {
-        await next({ path: `/${localeRef.value}`, force: true })
-        return
+        await next()
       }
-    }
+    })
+  }
 
-    const locale = localeMap.get(paramsLocale || defaultLocale)!
+  // handle loading resources
+  router.beforeEach(async(to, from, next) => {
+    const paramsLocale = to.params.locale as string
+
+    const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
 
     await loadResourcesAndChangeLocale(
       locale,
@@ -249,17 +343,12 @@ export function configureClientNavigationGuards(
       to,
       globalMessages,
       routeMessageResolver,
+      cookieInfo,
     )
 
     await next()
   })
-  // the head object is updated before step 11 on router navigation guard on the new route
-  router.afterEach(async(to) => {
-    // if (isFirstRouteAfterEach) {
-    //   isFirstRouteAfterEach = false
-    // todo@userquin: we need to check if SSR then done otherwise we need to inject the header
-    // }
-    // else {
+  const updateHead = async(to: RouteLocationNormalized) => {
     await configureHead(
       to,
       headObject,
@@ -268,8 +357,18 @@ export function configureClientNavigationGuards(
       headConfigurer,
     )
     await nextTick()
-    head.updateDOM(document)
-    // }
+    head.updateDOM()
+  }
+  let isFirstRouteAfterEach = true
+  // the head object is updated before step 11 on router navigation guard on the new route
+  // here were are ready to update the head, will be flush
+  router.afterEach(async(to) => {
+    // we need to find a wayt to update the head
+    // see todo@anfu at bottom of src/client/index.ts starting the client app
+    if (!isFirstRouteAfterEach)
+      isFirstRouteAfterEach = false
+    else
+      await updateHead(to)
   })
 }
 
@@ -287,6 +386,7 @@ export function configureRouteEntryServer(
 ) {
   let entryRoutePath: string | undefined
   let isFirstRoute = true
+
   router.beforeEach(async(to, from, next) => {
     const paramsLocale = to.params.locale as string || defaultLocale
 

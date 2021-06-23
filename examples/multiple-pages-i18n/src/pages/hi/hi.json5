@@ -1,6 +1,6 @@
 {
   en: {
-    "/b": {
+    "/hi": {
       title: "Hello",
       description: "Website description",
       imgtitle: "Image for hello I am B",
@@ -15,7 +15,7 @@
     },
   },
   es: {
-    "/b": {
+    "/hi": {
       title: "Hola",
       description: "Descripción del sitio web",
       imgtitle: "Imagen para hola I soy B",

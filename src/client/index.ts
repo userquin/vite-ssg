@@ -1,4 +1,4 @@
-import { createSSRApp, Component, createApp as createClientApp, defineComponent } from 'vue'
+import { createSSRApp, Component, createApp as createClientApp } from 'vue'
 import { createHead } from '@vueuse/head'
 import { initializeI18n } from '../i18n/utils'
 import { initViteSSGContext } from '../utils/context'
@@ -74,10 +74,16 @@ export function ViteSSG(
 
   if (isClient) {
     (async() => {
-      const { app, router } = await createApp(true)
+      // todo@cleanup
+      const { app/*, router */ } = await createApp(true)
+      // todo@antfu: confirm this please
+      // there is no need to wait router ready on client:
+      // useHead or i18n will not work on first entry or on F5
       // wait until page component is fetched before mounting
-      await router.isReady()
+      // await router.isReady()
+      console.log('ANTES MOUNT')
       app.mount(rootContainer, true)
+      console.log('DESPUES MOUNT')
     })()
   }
 

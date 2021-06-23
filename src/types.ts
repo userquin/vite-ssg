@@ -2,7 +2,7 @@ import { App } from 'vue'
 import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
 import { HeadClient, HeadObject } from '@vueuse/head'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
-import { useAvailableLocales } from './i18n/composables'
+import { useAvailableLocales, useI18nRouter } from './i18n/composables'
 
 export interface ViteSSGOptions {
   /**
@@ -92,21 +92,13 @@ export interface ViteSSGClientOptions {
 
 export type RouterOptions = PartialKeys<VueRouterOptions, 'history'> & { base?: string }
 
-export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales }
+export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales, useI18nRouter }
 
 // extend vue-router meta
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string
     description?: string
-    /**
-     * The original `path` without the `locale` prefix.
-     */
-    rawPath?: string
-    /**
-     * The original `path` without the `locale` prefix: for `/` will be `index`.
-     */
-    rawI18nPath?: string
     /**
      * The locale for the route.
      */

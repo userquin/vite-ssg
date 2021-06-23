@@ -25,6 +25,8 @@ export type ViteSSGLocale = {
   variant?: string
 }
 
+export type DefaultViteSSGLocale = ViteSSGLocale & { path: string; localePathVariable: string }
+
 export type AvailableLocale = {
   locale: Locale
   description: string
@@ -34,6 +36,7 @@ export type AvailableLocale = {
 
 export type LocaleInfo = {
   current: Locale
+  firstDetection: boolean
   locales: Record<Locale, ViteSSGLocale>
 }
 
@@ -69,6 +72,12 @@ export interface I18nOptions {
    * @default 'locale'
    */
   localePathVariable?: string
+  /**
+   * Locale cookie name.
+   *
+   * @default 'VITE-SSG-LOCALE'
+   */
+  cookieName?: string
   /**
    * The remote url for generating `crawling` info.
    */

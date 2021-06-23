@@ -137,10 +137,8 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
   await Promise.all(
     routesPaths.map(async(route) => {
-      const routePath = i18n ? (route.startsWith('/') ? route : `/${route}`) : route
-
       const { app, router, head } = await createApp(false, base, {
-        requestUrl: routePath,
+        requestUrl: route,
       })
 
       if (router) {
@@ -148,7 +146,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
         await router.isReady()
       }
 
-      const transformedIndexHTML = (await onBeforePageRender?.(routePath, indexHTML)) || indexHTML
+      const transformedIndexHTML = (await onBeforePageRender?.(route, indexHTML)) || indexHTML
 
       const ctx: SSRContext = {}
       const appHTML = await renderToString(app, ctx)
@@ -166,10 +164,10 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
       head?.updateDOM(jsdom.window.document)
 
       const html = jsdom.serialize()
-      const transformed = (await onPageRendered?.(routePath, html)) || html
+      const transformed = (await onPageRendered?.(route, html)) || html
       const formatted = format(transformed, formatting)
 
-      const relativeRoute = (routePath.endsWith('/') ? `${routePath}index` : routePath).replace(/^\//g, '')
+      const relativeRoute = (route.endsWith('/') ? `${route}index` : route).replace(/^\//g, '')
       const filename = `${relativeRoute}.html`
 
       await fs.ensureDir(join(out, dirname(relativeRoute)))

@@ -2,6 +2,7 @@
 import { useAvailableLocales } from 'vite-ssg'
 
 const { availableLocales, route } = useAvailableLocales()
+
 </script>
 
 <template>

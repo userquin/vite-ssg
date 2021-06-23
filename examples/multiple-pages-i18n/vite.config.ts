@@ -57,7 +57,6 @@ const config: UserConfig = {
       if (process.env.I18N_BASE)
         (i18nOptions as any).base = process.env.I18N_BASE
 
-      console.log(`I18N OPTIONS: ${JSON.stringify(i18nOptions, null, 2)}`)
       return i18nOptions
     },
   },
