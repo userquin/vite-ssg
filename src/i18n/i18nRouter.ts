@@ -6,8 +6,8 @@ import {
   RouteRecordRaw,
   RouterView,
 } from 'vue-router'
-import { defineComponent, h, ref } from 'vue'
-import { HeadObject } from '@vueuse/head'
+import { defineComponent, h, Ref, ref } from 'vue'
+import { HeadObject, HeadObjectPlain } from '@vueuse/head'
 import { CreateVueI18n, HeadConfigurer, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import { prepareHead } from './crawling'
 import { provideDefaultLocale, provideHeadObject, provideLocales } from './composables'
@@ -162,7 +162,7 @@ export function createI18nRouter(
     ) => {
       const localeRef = i18n.global.locale
       const localesArray = Object.values(localeInfo.locales)
-      const headObject = ref<HeadObject>({})
+      const headObject = ref<HeadObject>({}) as Ref<HeadObjectPlain>
 
       const { app, head } = context
 

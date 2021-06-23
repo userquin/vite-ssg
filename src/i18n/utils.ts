@@ -7,7 +7,7 @@ import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
 import type { I18nOptions, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
-import type { HeadClient, HeadObject } from '@vueuse/head'
+import type { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
 
 export function detectPreferredClientLocale(defaultLocale: Locale, localesMap: Map<string, ViteSSGLocale>) {
   // navigator.languages:    Chrome & FF
@@ -293,39 +293,44 @@ export function configureClientNavigationGuards(
   }
 
   // handle bad locale or missing required locale
-  router.beforeEach(async(to, from, next) => {
+  router.beforeEach((to, from, next) => {
     const paramsLocale = to.params.locale as string
 
     if ((paramsLocale && !localeMap.has(paramsLocale)) || (!paramsLocale && requiredLocaleParam)) {
-      await next(resolveNewRouteLocationNormalized(
+      next(resolveNewRouteLocationNormalized(
         router,
         defaultLocale,
-        requiresHandlingFirstRoute
-          ? detectPreferredClientLocale(defaultLocale.locale, localeMap)
-          : localeRef.value,
+        requiresHandlingFirstRoute ? localeInfo.current : localeRef.value,
         to,
       ).fullPath)
     }
     else {
-      await next()
+      next()
     }
   })
 
   // handle initial request calculating forwarding/redirecting to preferred locale
   if (requiresHandlingFirstRoute) {
     let isFirstRoute = true
-    router.beforeEach(async(to, from, next) => {
+    router.beforeEach((to, from, next) => {
       const paramsLocale = to.params.locale as string || defaultLocale
       if (isFirstRoute) {
         isFirstRoute = true
         const currentLocale = localeRef.value
-        if (paramsLocale !== currentLocale)
-          await next(resolveNewRouteLocationNormalized(router, defaultLocale, currentLocale, to).fullPath)
-        else
-          await next()
+        if (paramsLocale !== currentLocale) {
+          next(resolveNewRouteLocationNormalized(
+            router,
+            defaultLocale,
+            currentLocale,
+            to,
+          ).fullPath)
+        }
+        else {
+          next()
+        }
       }
       else {
-        await next()
+        next()
       }
     })
   }
@@ -348,28 +353,27 @@ export function configureClientNavigationGuards(
 
     await next()
   })
-  const updateHead = async(to: RouteLocationNormalized) => {
-    await configureHead(
-      to,
-      headObject,
-      i18n,
-      localeMap.get(localeRef.value)!,
-      headConfigurer,
-    )
-    await nextTick()
-    head.updateDOM()
-  }
   let isFirstRouteAfterEach = true
   // the head object is updated before step 11 on router navigation guard on the new route
   // here were are ready to update the head, will be flush
   router.afterEach(async(to) => {
-    // we need to find a wayt to update the head
-    // see todo@anfu at bottom of src/client/index.ts starting the client app
-    if (!isFirstRouteAfterEach)
+    if (isFirstRouteAfterEach) {
       isFirstRouteAfterEach = false
-    else
-      await updateHead(to)
+    }
+    else {
+      await configureHead(
+        to,
+        headObject,
+        i18n,
+        localeMap.get(localeRef.value)!,
+        headConfigurer,
+      )
+      await nextTick()
+      head.updateDOM()
+    }
   })
+
+  router.push({ path: window.location.pathname })
 }
 
 export function configureRouteEntryServer(

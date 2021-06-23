@@ -5,7 +5,7 @@ import {
 } from 'vue-router'
 import { App, computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { HeadObject } from '@vueuse/head'
+import { HeadObject, HeadObjectPlain } from '@vueuse/head'
 import { readonly } from '@vue/reactivity'
 import { AvailableLocale, DefaultViteSSGLocale, ViteSSGLocale } from './types'
 import { resolveNewRawLocationRoute, resolveNewRouteLocationNormalized } from './utils'
@@ -27,12 +27,12 @@ export function injectDefaultLocale() {
   return inject<DefaultViteSSGLocale>(defaultLocaleKey)
 }
 
-export function provideHeadObject(app: App, headObject: Ref<HeadObject>) {
+export function provideHeadObject(app: App, headObject: Ref<HeadObjectPlain>) {
   app.provide(headObjectKey, headObject)
 }
 
 export function injectHeadObject() {
-  return inject<Ref<HeadObject>>(headObjectKey)
+  return inject<HeadObjectPlain>(headObjectKey)
 }
 
 export function useI18nRouter() {

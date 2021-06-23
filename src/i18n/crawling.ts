@@ -1,7 +1,8 @@
 // https://developers.google.com/search/docs/advanced/crawling/special-tags
 import { isRef, WritableComputedRef } from '@vue/reactivity'
+import { ref, Ref } from 'vue'
 import { RouterOptions } from '../types'
-import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import type { HeadAttrs } from '@vueuse/head'
 import type { Crawling, ViteSSGLocale } from './types'
 
@@ -87,24 +88,22 @@ export function prepareHead(
       head.htmlAttrs = {
         lang: locale.locale,
       }
-      const routeMeta = route.meta
-      if (routeMeta) {
-        // 2) title
-        if (routeMeta.title)
-          head.title = routeMeta.title
-        // 3) description
-        if (routeMeta.description) {
-          let description = metaArray.find(m => m.name === 'description')
-          if (!description) {
-            description = {
-              name: 'description',
-              content: routeMeta.description,
-            }
-            metaArray.push(description)
+      const routeMeta = route.meta!
+      // 2) title
+      if (routeMeta.title)
+        head.title = routeMeta.title
+      // 3) description
+      if (routeMeta.description) {
+        let description = metaArray.find(m => m.name === 'description')
+        if (!description) {
+          description = {
+            name: 'description',
+            content: routeMeta.description,
           }
-          else {
-            description.content = routeMeta.description
-          }
+          metaArray.push(description)
+        }
+        else {
+          description.content = routeMeta.description
         }
       }
 

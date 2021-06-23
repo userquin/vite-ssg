@@ -1,4 +1,4 @@
-import { App } from 'vue'
+import { App, Ref } from 'vue'
 import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
 import { HeadClient, HeadObject } from '@vueuse/head'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
