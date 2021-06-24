@@ -100,6 +100,7 @@ export function initializeI18n(base?: string, i18nOptions?: I18nOptions): {
       info: {
         localesMap: createLocales(i18nOptions),
         defaultLocale: i18nOptions.defaultLocale,
+        defaultLocaleOnUrl: i18nOptions.defaultLocaleOnUrl === true,
         localePathVariable,
         base,
         prefix: i18nOptions.pageMessagesInfo?.prefix || 'page-',

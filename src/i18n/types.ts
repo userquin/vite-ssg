@@ -67,6 +67,12 @@ export interface I18nOptions {
    */
   defaultLocale: Locale
   /**
+   * Should default locale be shown in the url?
+   *
+   * @default false
+   */
+  defaultLocaleOnUrl?: boolean
+  /**
    * The path variable to match the locale.
    *
    * @default 'locale'

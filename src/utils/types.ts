@@ -4,6 +4,7 @@ import { RouterOptions } from '../types'
 export type I18nConfigurationOptions = {
   localesMap: Map<string, ViteSSGLocale>
   defaultLocale: string
+  defaultLocaleOnUrl: boolean
   localePathVariable: string
   cookieName: string
   prefix: string

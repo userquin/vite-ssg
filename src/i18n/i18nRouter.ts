@@ -94,6 +94,7 @@ export function createI18nRouter(
   const {
     localesMap,
     defaultLocale,
+    defaultLocaleOnUrl,
     localePathVariable,
     cookieName,
     prefix,
@@ -190,7 +191,7 @@ export function createI18nRouter(
       const { app, head } = context
 
       // prepare head for each route and check for top dynamic routes
-      let hasDynamicRoutes = false
+      let hasDynamicRoutes = defaultLocaleOnUrl
       children.forEach((r) => {
         prepareHead(router, routerOptions, r, defaultLocale, localesArray, localeRef, base)
         hasDynamicRoutes = hasDynamicRoutes || r.path.startsWith(':') || r.path.includes('*')
@@ -209,7 +210,7 @@ export function createI18nRouter(
       provideDefaultLocale(app, defaultViteSSGLocale)
 
       // warn the user if we need to change path for default locale
-      if (hasDynamicRoutes) {
+      if (hasDynamicRoutes && !defaultLocaleOnUrl) {
         console.warn('vite-ssg:routes: you have at least a top route that is dynamic, the default locale will be shown on the url')
         console.warn(`vite-ssg:routes: ☝ the default locale should be /, with your routes, we need to change to /${defaultLocale}/`)
       }
