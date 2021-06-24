@@ -2,6 +2,7 @@ import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import { WritableComputedRef } from '@vue/reactivity'
 import { nextTick } from 'vue'
 import { ViteSSGContext } from '../types'
+import { configureRouteBeforeEachEntryServer } from '../utils/utils'
 import { DefaultViteSSGLocale, HeadConfigurer } from './types'
 import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
@@ -101,6 +102,8 @@ export function initializeI18n(base?: string, i18nOptions?: I18nOptions): {
         defaultLocale: i18nOptions.defaultLocale,
         localePathVariable,
         base,
+        prefix: i18nOptions.pageMessagesInfo?.prefix || 'page-',
+        isGlobal: i18nOptions.pageMessagesInfo?.isGlobal || true,
         cookieName: i18nOptions.cookieName || 'VITE-SSG-LOCALE',
       },
     }
@@ -200,20 +203,16 @@ async function configureHead(
     )
   }
   if (!resolved)
-    to.meta.injectI18nMeta?.(headObject.value, locale)
+    to.meta.injectI18nMeta?.(headObject.value, locale, i18n.global)
 }
 
-export async function loadResourcesAndChangeLocale(
+async function loadPageMessages(
   locale: ViteSSGLocale,
   localeRef: WritableComputedRef<Locale>,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   to: RouteLocationNormalized,
   globalMessages: Record<string, any> | undefined,
   routeMessageResolver?: I18nRouteMessageResolver,
-  cookieInfo?: {
-    name: string
-    base: string
-  },
 ) {
   // load locale messages
   const localeCode = locale.locale
@@ -224,22 +223,13 @@ export async function loadResourcesAndChangeLocale(
 
     if (messages && messages[localeCode]) {
       if (globalMessages && globalMessages[localeCode]) {
-        i18n.global.setLocaleMessage(localeCode, globalMessages[localeCode])
-        i18n.global.mergeLocaleMessage(localeCode, messages[localeCode])
+        await i18n.global.setLocaleMessage(localeCode, globalMessages[localeCode])
+        await i18n.global.mergeLocaleMessage(localeCode, messages[localeCode])
       }
       else {
-        i18n.global.setLocaleMessage(localeCode, messages[localeCode])
+        await i18n.global.setLocaleMessage(localeCode, messages[localeCode])
       }
     }
-  }
-
-  localeRef.value = localeCode
-
-  await nextTick()
-
-  if (cookieInfo) {
-    const { name, base } = cookieInfo
-    document.cookie = `${name}=${localeCode};path=${base}; SameSite=Strict`
   }
 }
 
@@ -267,6 +257,10 @@ export function resolveNewRawLocationRoute(
   currentLocale: Locale,
 ) {
   return resolveNewRouteLocationNormalized(router, defaultLocale, currentLocale, router.resolve(to)).fullPath
+}
+
+async function awaitFn(timeout: number) {
+  return new Promise(resolve => setTimeout(resolve, timeout))
 }
 
 export function configureClientNavigationGuards(
@@ -335,48 +329,55 @@ export function configureClientNavigationGuards(
     })
   }
 
-  // handle loading resources
-  router.beforeEach(async(to, from, next) => {
+  // the head object is updated before step 11 on router navigation guard on the new route
+  // here were are ready to update the head, will be flush
+  // the page resources are resolved here, since the component on afterEach is not yet resolved
+  router.afterEach(async(to) => {
     const paramsLocale = to.params.locale as string
 
     const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
 
-    await loadResourcesAndChangeLocale(
+    await awaitFn(1)
+
+    await loadPageMessages(
       locale,
       localeRef,
       i18n,
       to,
       globalMessages,
       routeMessageResolver,
-      cookieInfo,
     )
 
-    await next()
-  })
-  let isFirstRouteAfterEach = true
-  // the head object is updated before step 11 on router navigation guard on the new route
-  // here were are ready to update the head, will be flush
-  router.afterEach(async(to) => {
-    if (isFirstRouteAfterEach) {
-      isFirstRouteAfterEach = false
-    }
-    else {
-      await configureHead(
-        to,
-        headObject,
-        i18n,
-        localeMap.get(localeRef.value)!,
-        headConfigurer,
-      )
-      await nextTick()
-      head.updateDOM()
-    }
-  })
+    localeRef.value = locale.locale
 
-  router.push({ path: window.location.pathname })
+    await awaitFn(1)
+
+    const { name, base } = cookieInfo
+    try {
+      document.cookie = `${name}=${locale.locale};path=${base}; SameSite=Strict`
+    }
+    catch (e) {
+      console.warn(`cannot configure cookie locale: ${name}`, e)
+    }
+
+    await awaitFn(1)
+
+    await configureHead(
+      to,
+      headObject,
+      i18n,
+      localeMap.get(localeRef.value)!,
+      headConfigurer,
+    )
+
+    await awaitFn(1)
+
+    head?.updateDOM()
+  })
 }
 
-export function configureRouteEntryServer(
+export async function configureRouteEntryServer(
+  route: string,
   router: Router,
   context: ViteSSGContext<true>,
   headObject: Ref<HeadObject>,
@@ -388,38 +389,46 @@ export function configureRouteEntryServer(
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
 ) {
-  let entryRoutePath: string | undefined
-  let isFirstRoute = true
+  // configure router and route to the first route
+  configureRouteBeforeEachEntryServer(router, context)
 
-  router.beforeEach(async(to, from, next) => {
-    const paramsLocale = to.params.locale as string || defaultLocale
+  // push the current route
+  await router.push(route)
 
-    const locale = localeMap.get(paramsLocale || defaultLocale)!
+  // await router ready
+  await router.isReady()
 
-    await loadResourcesAndChangeLocale(
-      locale,
-      localeRef,
-      i18n,
-      to,
-      globalMessages,
-      routeMessageResolver,
-    )
+  await nextTick()
 
-    await configureHead(
-      to,
-      headObject,
-      i18n,
-      locale,
-      headConfigurer,
-    )
+  // prepare data
+  const locale = localeMap.get(localeRef.value)!
 
-    if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
-      // The first route is rendered in the server and its state is provided globally.
-      isFirstRoute = false
-      entryRoutePath = to.path
-      to.meta.state = context.initialState
-    }
+  await nextTick()
 
-    await next()
-  })
+  // preload data
+  const to = await router.resolve(route)
+
+  await nextTick()
+
+  await loadPageMessages(
+    locale,
+    localeRef,
+    i18n,
+    to,
+    globalMessages,
+    routeMessageResolver,
+  )
+
+  await nextTick()
+
+  // update header
+  await configureHead(
+    to,
+    headObject,
+    i18n,
+    locale,
+    headConfigurer,
+  )
+
+  await nextTick()
 }

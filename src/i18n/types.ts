@@ -90,4 +90,75 @@ export interface I18nOptions {
    * `'en-US': 'American English'` or `'es-ES': 'Español de España'`
    */
   locales: Record<string, string>
+  /**
+   * Page messages info to localize the title and the description.
+   */
+  pageMessagesInfo?: {
+    /**
+     * Are the page messages registered globally?
+     *
+     * For example, you can have all your components pages with:
+     *
+     * <pre>
+     * <i18n...>
+     * </pre>
+     *
+     * or
+     *
+     * <pre>
+     * <i18n global...>
+     * </pre>
+     *
+     * We need to know if those pages resources are registered globally or locally.
+     *
+     * If you have the page resources registered lccally you will need to use:
+     *
+     * <pre>
+     * setup() {
+     *     const { t } = useI18n()
+     * }
+     * </pre>
+     *
+     * and then
+     *
+     * <pre>
+     * <p>{{ t('page-b.someresource') }}</p>
+     * </pre>
+     *
+     * while registering globally you will need:
+     *
+     * <pre>
+     * setup() {
+     *     const { t } = useI18n({ useScope: 'global' })
+     * }
+     * </pre>
+     *
+     */
+    isGlobal: boolean
+    /**
+     * Page messages info.
+     */
+    /**
+     * The prefix for the routes.
+     *
+     * This prefix is for the entry on your `resource` file:
+     * ```json
+     * "en": {
+     *   "page-a": {
+     *     "title": "Page A title",
+     *     "description": "Page A description",
+     *     ...<other page resources>
+     *   }
+     * }
+     * "es": {
+     *   "page-a": {
+     *     "title": "Título de la página A",
+     *     "description": "Descripción de página A",
+     *     ...<other page resources>
+     *   }
+     * }
+     * @default 'page-'.
+     */
+    prefix?: string
+  }
 }

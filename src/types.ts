@@ -1,6 +1,8 @@
 import { App, Ref } from 'vue'
 import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
 import { HeadClient, HeadObject } from '@vueuse/head'
+// @ts-ignore ignore when vue is not installed
+import { Composer } from 'vue-i18n'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
 import { useAvailableLocales, useI18nRouter } from './i18n/composables'
 
@@ -97,8 +99,40 @@ export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAva
 // extend vue-router meta
 declare module 'vue-router' {
   interface RouteMeta {
-    title?: string
-    description?: string
+    /**
+     * The key to localize the title and the description.
+     *
+     * The default value will be resolved from the `name` of the route or using the `path`.
+     *
+     * We suggest you using `route` from `vite-plugin-pages` on your page component:
+     * <pre>
+     * <route lang="yaml">
+     * meta:
+     *  pageI18nKey: 'PageA'
+     * </route>
+     * </pre>
+     *
+     * Beware on dynamic routes, we suggest you to include `pageI18nKey` using `route` from `vite-plugin-pages`.
+     *
+     * @default 'page-<route-name-or-route-path>'
+     */
+    pageI18nKey?: string
+    /**
+     * Key for title page translation.
+     *
+     * @default '${pageI18nKey}.title'
+     */
+    titleKey?: string
+    /**
+     * Key for title page translation.
+     *
+     * @default '${pageI18nKey}.description'
+     */
+    descriptionKey?: string
+    /**
+     * Are page messages registered globally?
+     */
+    isGlobal?: boolean
     /**
      * The locale for the route.
      */
@@ -110,11 +144,11 @@ declare module 'vue-router' {
      * ```html
      * <html lang="en">
      * ```
-     * 2) `title` head element from `route.meta.title`:
+     * 2) `title` head element from `route.meta.title` or looking for it from the composer:
      * ```html
      * <title>TITLE</title>
      * ```
-     * 3) `description` meta head from `route.meta.description`:
+     * 3) `description` meta head from `route.meta.description` or looking for it from the composer:
      * ```html
      * <meta name="description" content="<DESCRIPTION>">
      * ```
@@ -135,10 +169,18 @@ declare module 'vue-router' {
      * @param head The head object
      * @param locale The current locale
      */
-    injectI18nMeta?: (head: HeadObject, locale: ViteSSGLocale) => HeadObject
+    // @ts-ignore ignore when vue is not installed
+    injectI18nMeta?: (
+      head: HeadObject,
+      locale: ViteSSGLocale,
+      i18nComposer: Composer<Record<string, any>, unknown, unknown>,
+      title?: string,
+      description?: string,
+    ) => HeadObject
     /**
      * Meta tags for alternative URLs.
      */
+    // @ts-ignore ignore when vue is not installed
     crawling?: Crawling
   }
 }

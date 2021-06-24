@@ -1,32 +1,18 @@
 {
   en: {
-    "/b": {
+    "PageB": {
       title: "Hello",
       description: "Website description",
       imgtitle: "Image for hello I am B",
       "whats-your-name": "What is your name",
-      crawling: {
-        style: [
-          {
-            children: "body {'{'}color: #567839{'}'}"
-          }
-        ]
-      },
     },
   },
   es: {
-    "/b": {
+    "PageB": {
       title: "Hola",
       description: "Descripción del sitio web",
       imgtitle: "Imagen para hola I soy B",
       "whats-your-name": "¿Cómo te llamas?",
-      crawling: {
-        style: [
-          {
-            children: "body {'{'}color: #567839{'}'}"
-          }
-        ]
-      },
     },
   }
 }

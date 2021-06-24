@@ -65,7 +65,6 @@ export function ViteSSG(
     return await initViteSSGContext(
       app,
       head,
-      isClient,
       configuration,
       fn,
       transformState,
@@ -75,6 +74,7 @@ export function ViteSSG(
   if (isClient) {
     (async() => {
       const { app, router } = await createApp(true)
+      // wait until page component is fetched before mounting
       await router.isReady()
       app.mount(rootContainer, true)
     })()

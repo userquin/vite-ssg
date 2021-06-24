@@ -1,13 +1,13 @@
 {
   en: {
-    "/b": {
+    "page-b": {
       title: "Hello",
       description: "Website description",
       imgtitle: "Image for hello I am B",
     },
   },
   es: {
-    "/b": {
+    "page-b": {
       title: "Hola",
       description: "Descripción del sitio web",
       imgtitle: "Imagen para hola I soy B",

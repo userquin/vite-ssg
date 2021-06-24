@@ -6,6 +6,8 @@ export type I18nConfigurationOptions = {
   defaultLocale: string
   localePathVariable: string
   cookieName: string
+  prefix: string
+  isGlobal: boolean
   base?: string
 }
 

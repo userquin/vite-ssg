@@ -1,11 +1,17 @@
-<i18n lang="yml">
+<route lang="yaml">
+meta:
+  pageI18nKey: HiPage
+  isGlobal: false
+</route>
+
+<i18n lang="yaml">
 en:
-  /hi:
+  HiPage:
     hi: Hi {name}
     dynamic-route: Dynamic route
     back: Back
 es:
-  /hi:
+  HiPage:
     hi: Hola {name}
     dynamic-route: Ruta dinámica
     back: Volver
@@ -30,18 +36,15 @@ const { t } = useI18n()
 <template>
   <div>
     <p>
-      {{ t('/hi.hi', { name: props.name }) }}
+      {{ t('HiPage.hi', { name: props.name }) }}
     </p>
-    <p class="text-sm opacity-50">
-      <em>{{ t('/hi.dynamic-route') }}</em>
+    <p>
+      <em>{{ t('HiPage.dynamic-route') }}</em>
     </p>
 
     <div>
-      <button
-        class="btn m-3 text-sm mt-8"
-        @click="router.back()"
-      >
-        {{ t('/hi.back') }}
+      <button @click="router.back()">
+        {{ t('HiPage.back') }}
       </button>
     </div>
   </div>

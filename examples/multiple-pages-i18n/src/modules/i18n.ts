@@ -23,11 +23,33 @@ export const install = (ctx: ViteSSGContext) => {
     //     return undefined
     //   }
     // },
-    async(route, headObject, pageMessages, locale) => {
+    async(route, headObject, i18nComposer, locale) => {
       const meta = route.meta
       if (meta && meta.injectI18nMeta) {
+        if (!meta.isGlobal)
+          console.log(i18nComposer.messages.value[locale.locale].title)
+
+        // you can delegate to default behavior
+        headObject.value = meta.injectI18nMeta(
+          headObject.value,
+          locale,
+          i18nComposer,
+        )
+        // you can customize the entire head object
+        /*
+        const routeName = route.name?.toString() || route.path
         // we can add what we want, also change the entire headObject
-        meta.injectI18nMeta(headObject.value, locale)
+        meta.injectI18nMeta(
+          headObject.value,
+          locale,
+          i18nComposer,
+          i18nComposer.t(`page-${routeName}.title`),
+          i18nComposer.t(`page-${routeName}.description`),
+        )
+        */
+        // or you can change the entire head object page
+        // todo@userquin: include example with dynamic import
+        // headObject = await import()
       }
 
       return true

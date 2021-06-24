@@ -5,6 +5,7 @@ import { createI18nRouter } from '../i18n/i18nRouter'
 import { CreateVueI18n, LocaleInfo, ViteSSGContext } from '../types'
 import { RouterConfiguration } from './types'
 import { deserializeState, serializeState } from './state'
+import { configureRouteBeforeEachEntryServer } from './utils'
 
 function createViteSSGRouter(
   app: App,
@@ -33,9 +34,8 @@ function createViteSSGRouter(
         : createMemoryHistory(routerOptions.base),
       ...routerOptions,
     })
+    app.use(router)
   }
-
-  app.use(router)
 
   return { router, routes, useFn: fn, localeInfo, createVueI18n }
 }
@@ -66,14 +66,13 @@ async function initializeState(
 export async function initViteSSGContext(
   app: App,
   head: HeadClient | undefined,
-  isClient: boolean,
   configuration: RouterConfiguration,
   fn?: (context: ViteSSGContext<true>) => Promise<void> | void,
   transformState?: (state: any) => any,
 ): Promise<ViteSSGContext<true>> {
-  const { client, i18n } = configuration
+  const { client, i18n, isClient } = configuration
 
-  const { router, routes, useFn, localeInfo, createVueI18n } = createViteSSGRouter(app, configuration, fn)
+  const { router, routes, useFn, localeInfo, createVueI18n } = await createViteSSGRouter(app, configuration, fn)
 
   const context = await initializeState(
     app,
@@ -89,27 +88,19 @@ export async function initViteSSGContext(
   )
 
   // i18n logic will be include on createViteSSGRouter: we only need to handle routing as the original
-  if (!i18n) {
-    let entryRoutePath: string | undefined
-    let isFirstRoute = true
-    router.beforeEach(async(to, from, next) => {
-      if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
-        // The first route is rendered in the server and its state is provided globally.
-        isFirstRoute = false
-        entryRoutePath = to.path
-        to.meta.state = context.initialState
-      }
-
-      await next()
-    })
-  }
+  if (!i18n)
+    configureRouteBeforeEachEntryServer(router, context)
 
   if (!client) {
-    if (i18n && configuration.requestHeaders?.requestUrl)
+    if (i18n && configuration.requestHeaders?.requestUrl) {
+      // noinspection ES6MissingAwait
       await router.push({ path: configuration.requestHeaders.requestUrl })
+    }
 
-    else
+    else {
+      // noinspection ES6MissingAwait
       await router.push(configuration.routerOptions.base || '/')
+    }
 
     await router.isReady()
     context.initialState = router.currentRoute.value.meta.state as Record<string, any> || {}

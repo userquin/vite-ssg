@@ -16,7 +16,8 @@ import {
   detectClientLocale,
   detectServerLocale,
   configureClientNavigationGuards,
-  configureRouteEntryServer, normalizeLocalePathVariable,
+  configureRouteEntryServer,
+  normalizeLocalePathVariable,
 } from './utils'
 import type { ViteSSGContext } from '../types'
 import type { Router } from 'vue-router'
@@ -26,6 +27,7 @@ function createI18nFactory(
   locale: string,
   defaultLocale: string,
   localesMap: Map<string, ViteSSGLocale>,
+  isGlobal: boolean,
   initialized: (
     context: ViteSSGContext<true>,
     i18n: I18n<Record<string, any>, unknown, unknown, false>,
@@ -52,16 +54,14 @@ function createI18nFactory(
     // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
     const i18n = createI18n({
       legacy: false,
+      globalInjection: isGlobal,
       fallbackLocale: defaultLocale,
       availableLocales: availableLocales.map(l => l.locale),
       messages: messages || {},
       locale,
     })
 
-    const { app } = context
-
-    app.use(i18n)
-
+    console.log('initialized')
     await initialized(
       context,
       i18n,
@@ -91,7 +91,15 @@ export function createI18nRouter(
   // eslint-disable-next-line prefer-const
   let { routes, ...useRouterOptions } = routerOptions
 
-  const { localesMap, defaultLocale, localePathVariable, cookieName } = i18nOptions
+  const {
+    localesMap,
+    defaultLocale,
+    localePathVariable,
+    cookieName,
+    prefix,
+    isGlobal,
+  } = i18nOptions
+
   let base: string | undefined
   if (client && isClient) {
     localeInfo = detectClientLocale(cookieName, defaultLocale, localesMap)
@@ -120,8 +128,22 @@ export function createI18nRouter(
     if (r.path.startsWith('/'))
       r.path = r.path.substring(1)
 
-    // we create the meta
     r.meta = r.meta || {}
+
+    const pageI18nKey = r.meta.pageI18nKey
+    if (!pageI18nKey) {
+      const routeName = r.name?.toString() || r.path
+      r.meta.pageI18nKey = `${prefix}${routeName}`
+    }
+
+    if (!r.meta.titleKey)
+      r.meta.titleKey = `${r.meta.pageI18nKey}.title`
+
+    if (!r.meta.descriptionKey)
+      r.meta.descriptionKey = `${r.meta.pageI18nKey}.description`
+
+    if (typeof r.meta.isGlobal === undefined)
+      r.meta.isGlobal = true
 
     return r
   })
@@ -153,6 +175,7 @@ export function createI18nRouter(
     localeInfo?.current || defaultLocale,
     defaultLocale,
     localesMap,
+    isGlobal,
     async(
       context,
       i18n,
@@ -160,6 +183,7 @@ export function createI18nRouter(
       routeMessageResolver,
       headConfigurer?: HeadConfigurer,
     ) => {
+      console.log('initialized2')
       const localeRef = i18n.global.locale
       const localesArray = Object.values(localeInfo.locales)
       const headObject = ref<HeadObject>({}) as Ref<HeadObjectPlain>
@@ -194,6 +218,9 @@ export function createI18nRouter(
       // register the head object
       head!.addHeadObjs(headObject)
 
+      app.use(i18n)
+      app.use(router)
+
       // we only need handle the route logic on the client side
       if (client && isClient) {
         configureClientNavigationGuards(
@@ -214,7 +241,9 @@ export function createI18nRouter(
         )
       }
       else {
-        configureRouteEntryServer(
+        localeRef.value = localeInfo.current
+        await configureRouteEntryServer(
+          requestHeaders?.requestUrl || routerOptions.base || '/',
           router,
           context,
           headObject,
@@ -230,12 +259,16 @@ export function createI18nRouter(
     },
   )
   // we need to provide a hook to initialize if the user omit it
-  if (!fn) {
-    fn = (context) => {
-      context.createI18n?.(context)
-    }
+  // by default wrap it: we need to await initialization
+  const useFn: ((context: ViteSSGContext<true>) => Promise<void> | void) = async(context) => {
+    console.log('useFn')
+    if (fn)
+      await fn(context)
+
+    else
+      await createVueI18n(context)
   }
 
   // return i18n stuff
-  return { router, routes: localeRoutes, localeInfo, createVueI18n, fn }
+  return { router, routes: localeRoutes, localeInfo, createVueI18n, fn: useFn }
 }

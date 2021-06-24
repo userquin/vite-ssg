@@ -1,6 +1,7 @@
 // https://developers.google.com/search/docs/advanced/crawling/special-tags
 import { isRef, WritableComputedRef } from '@vue/reactivity'
 import { ref, Ref } from 'vue'
+import { Composer } from 'vue-i18n'
 import { RouterOptions } from '../types'
 import type { RouteRecordRaw } from 'vue-router'
 import type { HeadAttrs } from '@vueuse/head'
@@ -80,45 +81,69 @@ export function prepareHead(
     return headers
   }
   if (route.meta) {
-    route.meta.injectI18nMeta = (head, locale) => {
+    route.meta.injectI18nMeta = (
+      head,
+      locale,
+      i18nComposer,
+      title?: string,
+      description?: string,
+    ) => {
       head.meta = head.meta || []
       const metaArray = isRef(head.meta) ? head.meta.value : head.meta
 
       // 1) `lang` attribute for `html` element
-      head.htmlAttrs = {
-        lang: locale.locale,
-      }
-      const routeMeta = route.meta!
-      // 2) title
-      if (routeMeta.title)
-        head.title = routeMeta.title
-      // 3) description
-      if (routeMeta.description) {
-        let description = metaArray.find(m => m.name === 'description')
-        if (!description) {
-          description = {
-            name: 'description',
-            content: routeMeta.description,
-          }
-          metaArray.push(description)
+      if (head.htmlAttrs) {
+        head.htmlAttrs = {
+          ...head.htmlAttrs,
+          lang: locale.locale,
         }
-        else {
-          description.content = routeMeta.description
+      }
+      else {
+        head.htmlAttrs = {
+          lang: locale.locale,
         }
       }
 
+      // 2) title
+      console.log('----------------------------------')
+      console.log(locale.locale)
+      console.log(title!)
+      console.log(route.meta!.titleKey!)
+      console.log(i18nComposer.te(route.meta!.titleKey!))
+      console.log(i18nComposer.t(route.meta!.titleKey!))
+      const titleText = title || (i18nComposer.te(route.meta!.titleKey!) ? i18nComposer.t(route.meta!.titleKey!) : null)
+      if (titleText)
+        head.title = titleText
+
+      // 3) description
+      console.log(description)
+      console.log(route.meta!.descriptionKey!)
+      console.log(i18nComposer.te(route.meta!.descriptionKey!))
+      console.log(i18nComposer.t(route.meta!.descriptionKey!))
+      const descriptionText = description || (i18nComposer.te(route.meta!.descriptionKey!)
+        ? i18nComposer.t(route.meta!.descriptionKey!)
+        : null)
+
+      const descriptionIdx = metaArray.findIndex(m => m.name === 'description')
+      if (descriptionIdx >= 0)
+        metaArray.splice(descriptionIdx, 1)
+
+      if (descriptionText) {
+        metaArray.push({
+          name: 'description',
+          content: descriptionText,
+        })
+      }
       // 4) Meta tag for `og:locale` for the current locale
-      let ogLocale = metaArray.find(m => m.property === 'og:locale')
-      if (!ogLocale) {
-        ogLocale = {
-          property: 'og:locale',
-          content: locale.locale,
-        }
-        metaArray.push(ogLocale)
-      }
-      else {
-        ogLocale.content = locale.locale
-      }
+      const ogLocaleIdx = metaArray.findIndex(m => m.property === 'og:locale')
+
+      if (ogLocaleIdx >= 0)
+        metaArray.splice(ogLocaleIdx, 1)
+
+      metaArray.push({
+        property: 'og:locale',
+        content: locale.locale,
+      })
 
       // 5) Meta tag to avoid browser showing page translation popup
       if (metaArray.find(m => m.property === 'google') === null) {
