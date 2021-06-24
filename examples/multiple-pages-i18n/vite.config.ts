@@ -60,6 +60,13 @@ const config: UserConfig = {
       return i18nOptions
     },
   },
+  optimizeDeps: {
+    include: [
+      'vue',
+      'vue-i18n',
+      'vue-router',
+    ],
+  },
 }
 
 export default config
