@@ -6,7 +6,6 @@ import { build as viteBuild, normalizePath, resolveConfig, UserConfig } from 'vi
 import { renderToString, SSRContext } from '@vue/server-renderer'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { RollupOutput } from 'rollup'
-import { renderHeadToString } from '@vueuse/head'
 import { ViteSSGContext, ViteSSGOptions } from '../client'
 import { createLocalePathRoute } from '../i18n/utils'
 import { I18nOptions } from '../i18n/types'

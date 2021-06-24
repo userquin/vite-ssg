@@ -1,7 +1,5 @@
 // https://developers.google.com/search/docs/advanced/crawling/special-tags
 import { isRef, WritableComputedRef } from '@vue/reactivity'
-import { ref, Ref } from 'vue'
-import { Composer } from 'vue-i18n'
 import { RouterOptions } from '../types'
 import type { RouteRecordRaw } from 'vue-router'
 import type { HeadAttrs } from '@vueuse/head'

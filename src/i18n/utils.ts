@@ -8,7 +8,7 @@ import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
 import type { I18nOptions, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
-import type { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
+import type { HeadClient, HeadObject } from '@vueuse/head'
 
 export function detectPreferredClientLocale(defaultLocale: Locale, localesMap: Map<string, ViteSSGLocale>) {
   // navigator.languages:    Chrome & FF
