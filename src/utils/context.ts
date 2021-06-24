@@ -5,7 +5,7 @@ import { createI18nRouter } from '../i18n/i18nRouter'
 import { CreateVueI18n, LocaleInfo, ViteSSGContext } from '../types'
 import { RouterConfiguration } from './types'
 import { deserializeState, serializeState } from './state'
-import { configureRouteBeforeEachEntryServer } from './utils'
+import { configureRouterBeforeEachEntryServer } from './utils'
 
 function createViteSSGRouter(
   app: App,
@@ -89,7 +89,7 @@ export async function initViteSSGContext(
 
   // i18n logic will be include on createViteSSGRouter: we only need to handle routing as the original
   if (!i18n)
-    configureRouteBeforeEachEntryServer(router, context)
+    configureRouterBeforeEachEntryServer(router, context)
 
   if (!client) {
     if (i18n && configuration.requestHeaders?.requestUrl) {

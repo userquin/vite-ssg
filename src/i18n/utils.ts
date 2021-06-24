@@ -2,7 +2,7 @@ import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import { WritableComputedRef } from '@vue/reactivity'
 import { nextTick } from 'vue'
 import { ViteSSGContext } from '../types'
-import { configureRouteBeforeEachEntryServer } from '../utils/utils'
+import { configureRouterBeforeEachEntryServer } from '../utils/utils'
 import { DefaultViteSSGLocale, HeadConfigurer } from './types'
 import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
@@ -395,8 +395,8 @@ export async function configureRouteEntryServer(
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
 ) {
-  // configure router and route to the first route
-  configureRouteBeforeEachEntryServer(router, context)
+  // configure router hooks
+  configureRouterBeforeEachEntryServer(router, context)
 
   // push the current route
   await router.push(route)
