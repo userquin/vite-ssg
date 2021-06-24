@@ -1,6 +1,6 @@
 {
   en: {
-    "PageB": {
+    PageB: {
       title: "Hello",
       description: "Website description",
       imgtitle: "Image for hello I am B",
@@ -8,7 +8,7 @@
     },
   },
   es: {
-    "PageB": {
+    PageB: {
       title: "Hola",
       description: "Descripción del sitio web",
       imgtitle: "Imagen para hola I soy B",

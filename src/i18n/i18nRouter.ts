@@ -6,7 +6,7 @@ import {
   RouteRecordRaw,
   RouterView,
 } from 'vue-router'
-import { defineComponent, h, Ref, ref } from 'vue'
+import { defineComponent, h, nextTick, Ref, ref } from 'vue'
 import { HeadObject, HeadObjectPlain } from '@vueuse/head'
 import { CreateVueI18n, HeadConfigurer, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
 import { prepareHead } from './crawling'
@@ -242,6 +242,9 @@ export function createI18nRouter(
       }
       else {
         localeRef.value = localeInfo.current
+
+        await nextTick()
+
         await configureRouteEntryServer(
           requestHeaders?.requestUrl || routerOptions.base || '/',
           router,

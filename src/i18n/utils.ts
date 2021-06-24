@@ -260,10 +260,6 @@ export function resolveNewRawLocationRoute(
   return resolveNewRouteLocationNormalized(router, defaultLocale, currentLocale, router.resolve(to)).fullPath
 }
 
-async function awaitFn(timeout: number) {
-  return new Promise(resolve => setTimeout(resolve, timeout))
-}
-
 export function configureClientNavigationGuards(
   router: Router,
   head: HeadClient,
@@ -344,8 +340,6 @@ export function configureClientNavigationGuards(
 
     const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
 
-    await awaitFn(1)
-
     await loadPageMessages(
       locale,
       localeRef,
@@ -357,8 +351,6 @@ export function configureClientNavigationGuards(
 
     localeRef.value = locale.locale
 
-    await awaitFn(1)
-
     const { name, base } = cookieInfo
     try {
       document.cookie = `${name}=${locale.locale};path=${base}; SameSite=Strict`
@@ -367,8 +359,6 @@ export function configureClientNavigationGuards(
       console.warn(`cannot configure cookie locale: ${name}`, e)
     }
 
-    await awaitFn(1)
-
     await configureHead(
       to,
       headObject,
@@ -376,8 +366,6 @@ export function configureClientNavigationGuards(
       localeMap.get(localeRef.value)!,
       headConfigurer,
     )
-
-    await awaitFn(1)
 
     head?.updateDOM()
   })
@@ -396,9 +384,59 @@ export async function configureRouteEntryServer(
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
 ) {
+  /* option 1: go to build.ts::144 ==> if (router && !i18n) should be if (router) */
+  router.beforeEach(async(to, from, next) => {
+    const locale = localeMap.get(localeRef.value)!
+
+    await loadPageMessages(
+      locale,
+      localeRef,
+      i18n,
+      to,
+      globalMessages,
+      routeMessageResolver,
+    )
+
+    await nextTick()
+
+    // update header
+    await configureHead(
+      to,
+      headObject,
+      i18n,
+      locale,
+      headConfigurer,
+    )
+
+    next()
+  })
   // configure router hooks
   configureRouterBeforeEachEntryServer(router, context)
 
+  /* option 2 => go to build.ts::144 ==> if (router && !i18n) should be if (router) */
+  // router.afterEach(async(to) => {
+  //   const locale = localeMap.get(localeRef.value)!
+  //
+  //   await loadPageMessages(
+  //     locale,
+  //     localeRef,
+  //     i18n,
+  //     to,
+  //     globalMessages,
+  //     routeMessageResolver,
+  //   )
+  //
+  //   // update header
+  //   await configureHead(
+  //     to,
+  //     headObject,
+  //     i18n,
+  //     locale,
+  //     headConfigurer,
+  //   )
+  // })
+/*
+  // option 3 => go to build.ts::144 ==> if (router) should be if (router && !i18n)
   // push the current route
   await router.push(route)
 
@@ -438,4 +476,5 @@ export async function configureRouteEntryServer(
   )
 
   await nextTick()
+*/
 }
