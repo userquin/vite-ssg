@@ -1,7 +1,7 @@
 <route lang="yaml">
 meta:
   pageI18nKey: HiPage
-  isGlobal: false
+  isGlobal: true
 </route>
 
 <i18n lang="yaml">

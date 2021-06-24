@@ -6,8 +6,8 @@ import App from './App.vue'
 export const createApp = ViteSSG(
   App,
   { routes },
-  async(ctx: ViteSSGContext) => {
-    await Promise.all(Object.values(import.meta.globEager('./modules/*.ts')).map(async m => await m.install?.(ctx)))
+  (ctx: ViteSSGContext) => {
+    Object.values(import.meta.globEager('./modules/*.ts')).map(m => m.install?.(ctx))
   },
   {
     i18nOptions,
