@@ -97,6 +97,10 @@ export interface I18nOptions {
     /**
      * Are the page messages registered globally?
      *
+     * Beware using `isGlobal: false`, since you will need to
+     * register the title and the description from the page component
+     * from `onMounted` hook.
+     *
      * For example, you can have all your components pages with:
      *
      * <pre>

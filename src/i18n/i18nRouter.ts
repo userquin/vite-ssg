@@ -61,7 +61,6 @@ function createI18nFactory(
       locale,
     })
 
-    console.log('initialized')
     await initialized(
       context,
       i18n,
@@ -183,7 +182,6 @@ export function createI18nRouter(
       routeMessageResolver,
       headConfigurer?: HeadConfigurer,
     ) => {
-      console.log('initialized2')
       const localeRef = i18n.global.locale
       const localesArray = Object.values(localeInfo.locales)
       const headObject = ref<HeadObject>({}) as Ref<HeadObjectPlain>
@@ -261,7 +259,6 @@ export function createI18nRouter(
   // we need to provide a hook to initialize if the user omit it
   // by default wrap it: we need to await initialization
   const useFn: ((context: ViteSSGContext<true>) => Promise<void> | void) = async(context) => {
-    console.log('useFn')
     if (fn)
       await fn(context)
 

@@ -131,6 +131,12 @@ declare module 'vue-router' {
     descriptionKey?: string
     /**
      * Are page messages registered globally?
+     *
+     * Beware using `isGlobal: false`, since you will need to
+     * register the title and the description from the page component
+     * from `onMounted` hook.
+     *
+     * @default true
      */
     isGlobal?: boolean
     /**

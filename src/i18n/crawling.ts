@@ -104,36 +104,33 @@ export function prepareHead(
         }
       }
 
+      const isGlobal = route.meta!.isGlobal
+
       // 2) title
-      console.log('----------------------------------')
-      console.log(locale.locale)
-      console.log(title!)
-      console.log(route.meta!.titleKey!)
-      console.log(i18nComposer.te(route.meta!.titleKey!))
-      console.log(i18nComposer.t(route.meta!.titleKey!))
-      const titleText = title || (i18nComposer.te(route.meta!.titleKey!) ? i18nComposer.t(route.meta!.titleKey!) : null)
-      if (titleText)
-        head.title = titleText
+      if (isGlobal) {
+        const titleText = title || (i18nComposer.te(route.meta!.titleKey!) ? i18nComposer.t(route.meta!.titleKey!) : null)
+        if (titleText)
+          head.title = titleText
+      }
 
       // 3) description
-      console.log(description)
-      console.log(route.meta!.descriptionKey!)
-      console.log(i18nComposer.te(route.meta!.descriptionKey!))
-      console.log(i18nComposer.t(route.meta!.descriptionKey!))
-      const descriptionText = description || (i18nComposer.te(route.meta!.descriptionKey!)
-        ? i18nComposer.t(route.meta!.descriptionKey!)
-        : null)
+      if (isGlobal) {
+        const descriptionText = description || (i18nComposer.te(route.meta!.descriptionKey!)
+          ? i18nComposer.t(route.meta!.descriptionKey!)
+          : null)
 
-      const descriptionIdx = metaArray.findIndex(m => m.name === 'description')
-      if (descriptionIdx >= 0)
-        metaArray.splice(descriptionIdx, 1)
+        const descriptionIdx = metaArray.findIndex(m => m.name === 'description')
+        if (descriptionIdx >= 0)
+          metaArray.splice(descriptionIdx, 1)
 
-      if (descriptionText) {
-        metaArray.push({
-          name: 'description',
-          content: descriptionText,
-        })
+        if (descriptionText) {
+          metaArray.push({
+            name: 'description',
+            content: descriptionText,
+          })
+        }
       }
+
       // 4) Meta tag for `og:locale` for the current locale
       const ogLocaleIdx = metaArray.findIndex(m => m.property === 'og:locale')
 
