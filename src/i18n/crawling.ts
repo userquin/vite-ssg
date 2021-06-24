@@ -111,8 +111,6 @@ export function prepareHead(
         if (route)
           params = route.params
 
-        console.log(params)
-
         // 2) title
         const titleText = title || (i18nComposer.te(route.meta!.titleKey!)
           ? i18nComposer.t(route.meta!.titleKey!, params)
