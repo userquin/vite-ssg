@@ -3,7 +3,7 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router'
-import { App, computed, inject } from 'vue'
+import { App, computed, inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { HeadObjectPlain } from '@vueuse/head'
 import { readonly } from '@vue/reactivity'
@@ -11,9 +11,9 @@ import { AvailableLocale, DefaultViteSSGLocale, ViteSSGLocale } from './types'
 import { resolveNewRawLocationRoute, resolveNewRouteLocationNormalized } from './utils'
 import type { Ref } from 'vue'
 
-const localesKey = Symbol('vite-ssg:languages')
+const localesKey = Symbol('vite-ssg:locales')
 const defaultLocaleKey = Symbol('vite-ssg:default-locale')
-const headObjectKey = Symbol('vite-ssg:heade-object')
+const headObjectKey = Symbol('vite-ssg:head-object')
 
 export function provideLocales(app: App, locales: Array<ViteSSGLocale>) {
   app.provide(localesKey, readonly(locales))
@@ -25,6 +25,10 @@ export function provideDefaultLocale(app: App, defaultLocale: DefaultViteSSGLoca
 
 export function injectDefaultLocale() {
   return inject<DefaultViteSSGLocale>(defaultLocaleKey)
+}
+
+export function injectLocales(): ViteSSGLocale[] {
+  return inject<Array<ViteSSGLocale>>(localesKey, [])
 }
 
 export function provideHeadObject(app: App, headObject: Ref<HeadObjectPlain>) {
@@ -75,17 +79,20 @@ export function useAvailableLocales() {
   const route = useRoute()
   const router = useRouter()
   const defaultLocale = injectDefaultLocale()!
-  const locales = inject<Array<ViteSSGLocale>>(localesKey, [])
+  const locales = injectLocales()
   const availableLocales = computed<Array<AvailableLocale>>(() => {
-    const currentLocale = route.params.locale
+    const currentLocale = route.params.locale || defaultLocale.locale
     return locales.map(({ locale, description }) => {
+      const resolved = resolveNewRouteLocationNormalized(router, defaultLocale, locale)
       return {
         locale,
         description,
         current: currentLocale === locale,
         to: {
           force: false,
-          path: resolveNewRouteLocationNormalized(router, defaultLocale, locale, route).fullPath,
+          path: resolved.fullPath === ''
+            ? defaultLocale.path || '/'
+            : resolved.fullPath,
         },
       }
     })

@@ -8,8 +8,9 @@ const { availableLocales, route } = useAvailableLocales()
 <template>
   <nav>
     <RouterLink
-      v-for="({ locale, description, to }) in availableLocales"
+      v-for="({ locale, description, to, current }) in availableLocales"
       :key="locale"
+      :aria-current="current"
       :to="to"
     >
       {{ description }}
