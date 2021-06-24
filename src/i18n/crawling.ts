@@ -108,19 +108,19 @@ export function prepareHead(
       if (isGlobal) {
         let params: Record<string, any> = {}
         const route = router.currentRoute.value
-        if (route)
+        if (route && Object.keys(route.params).length > 0)
           params = route.params
 
         // 2) title
-        const titleText = title || (i18nComposer.te(route.meta!.titleKey!)
-          ? i18nComposer.t(route.meta!.titleKey!, params)
+        const titleText = title || (route.meta!.titleKey && i18nComposer.te(route.meta!.titleKey)
+          ? i18nComposer.t(route.meta!.titleKey, params)
           : null)
         if (titleText)
           head.title = titleText
 
         // 3) description
-        const descriptionText = description || (i18nComposer.te(route.meta!.descriptionKey!)
-          ? i18nComposer.t(route.meta!.descriptionKey!, params)
+        const descriptionText = description || (route.meta!.descriptionKey && i18nComposer.te(route.meta!.descriptionKey)
+          ? i18nComposer.t(route.meta!.descriptionKey, params)
           : null)
 
         const descriptionIdx = metaArray.findIndex(m => m.name === 'description')

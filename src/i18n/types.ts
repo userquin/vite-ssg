@@ -40,12 +40,12 @@ export type LocaleInfo = {
   locales: Record<Locale, ViteSSGLocale>
 }
 
-export type I18nGlobalMessageResolver = () => Record<string, any> | Promise<Record<string, any>>
+export type I18nGlobalMessageResolver = () => Promise<Record<string, any>> | Record<string, any>
 
 export type I18nRouteMessageResolver = (
   locale: ViteSSGLocale,
   to: RouteLocationNormalized
-) => (Record<string, any> | Promise<Record<string, any>> | undefined)
+) => (Promise<Record<string, any>> | Record<string, any> | undefined)
 
 export type HeadConfigurer = (
   route: RouteLocationNormalized,
