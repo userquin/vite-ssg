@@ -141,7 +141,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
         requestUrl: route,
       })
 
-      if (router/* && !i18n */) {
+      if (router && !i18n) {
         await router.push(route)
         await router.isReady()
         console.log(`after router.isReady: ${JSON.stringify(head?.headTags, null, 2)}`)

@@ -385,31 +385,31 @@ export async function configureRouteEntryServer(
   headConfigurer?: HeadConfigurer,
 ) {
   /* option 1: go to build.ts::144 ==> if (router && !i18n) should be if (router) */
-  router.beforeEach(async(to, from, next) => {
-    const locale = localeMap.get(localeRef.value)!
-
-    await loadPageMessages(
-      locale,
-      localeRef,
-      i18n,
-      to,
-      globalMessages,
-      routeMessageResolver,
-    )
-
-    await nextTick()
-
-    // update header
-    await configureHead(
-      to,
-      headObject,
-      i18n,
-      locale,
-      headConfigurer,
-    )
-
-    next()
-  })
+  // router.beforeEach(async(to, from, next) => {
+  //   const locale = localeMap.get(localeRef.value)!
+  //
+  //   await loadPageMessages(
+  //     locale,
+  //     localeRef,
+  //     i18n,
+  //     to,
+  //     globalMessages,
+  //     routeMessageResolver,
+  //   )
+  //
+  //   await nextTick()
+  //
+  //   // update header
+  //   await configureHead(
+  //     to,
+  //     headObject,
+  //     i18n,
+  //     locale,
+  //     headConfigurer,
+  //   )
+  //
+  //   next()
+  // })
   // configure router hooks
   configureRouterBeforeEachEntryServer(router, context)
 
@@ -435,7 +435,6 @@ export async function configureRouteEntryServer(
   //     headConfigurer,
   //   )
   // })
-/*
   // option 3 => go to build.ts::144 ==> if (router) should be if (router && !i18n)
   // push the current route
   await router.push(route)
@@ -476,5 +475,4 @@ export async function configureRouteEntryServer(
   )
 
   await nextTick()
-*/
 }
