@@ -142,7 +142,7 @@ export function createI18nRouter(
     if (!r.meta.descriptionKey)
       r.meta.descriptionKey = `${r.meta.pageI18nKey}.description`
 
-    if (typeof r.meta.isGlobal === undefined)
+    if (r.meta.isGlobal === undefined)
       r.meta.isGlobal = true
 
     return r
@@ -192,7 +192,7 @@ export function createI18nRouter(
       // prepare head for each route and check for top dynamic routes
       let hasDynamicRoutes = false
       children.forEach((r) => {
-        prepareHead(routerOptions, r, defaultLocale, localesArray, localeRef, base)
+        prepareHead(router, routerOptions, r, defaultLocale, localesArray, localeRef, base)
         hasDynamicRoutes = hasDynamicRoutes || r.path.startsWith(':') || r.path.includes('*')
       })
 

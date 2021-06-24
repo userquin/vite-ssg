@@ -26,9 +26,6 @@ export const install = (ctx: ViteSSGContext) => {
     async(route, headObject, i18nComposer, locale) => {
       const meta = route.meta
       if (meta && meta.injectI18nMeta) {
-        if (!meta.isGlobal)
-          console.log(i18nComposer.messages.value[locale.locale].title)
-
         // you can delegate to default behavior
         headObject.value = meta.injectI18nMeta(
           headObject.value,

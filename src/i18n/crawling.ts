@@ -1,7 +1,7 @@
 // https://developers.google.com/search/docs/advanced/crawling/special-tags
 import { isRef, WritableComputedRef } from '@vue/reactivity'
 import { RouterOptions } from '../types'
-import type { RouteRecordRaw } from 'vue-router'
+import type { Router, RouteRecordRaw } from 'vue-router'
 import type { HeadAttrs } from '@vueuse/head'
 import type { Crawling, ViteSSGLocale } from './types'
 
@@ -59,6 +59,7 @@ function addMetaTagsForAlternativeURLs(
 }
 
 export function prepareHead(
+  router: Router,
   routerOptions: RouterOptions,
   route: RouteRecordRaw,
   defaultLocale: string,
@@ -104,17 +105,24 @@ export function prepareHead(
 
       const isGlobal = route.meta!.isGlobal
 
-      // 2) title
       if (isGlobal) {
-        const titleText = title || (i18nComposer.te(route.meta!.titleKey!) ? i18nComposer.t(route.meta!.titleKey!) : null)
+        let params: Record<string, any> = {}
+        const route = router.currentRoute.value
+        if (route)
+          params = route.params
+
+        console.log(params)
+
+        // 2) title
+        const titleText = title || (i18nComposer.te(route.meta!.titleKey!)
+          ? i18nComposer.t(route.meta!.titleKey!, params)
+          : null)
         if (titleText)
           head.title = titleText
-      }
 
-      // 3) description
-      if (isGlobal) {
+        // 3) description
         const descriptionText = description || (i18nComposer.te(route.meta!.descriptionKey!)
-          ? i18nComposer.t(route.meta!.descriptionKey!)
+          ? i18nComposer.t(route.meta!.descriptionKey!, params)
           : null)
 
         const descriptionIdx = metaArray.findIndex(m => m.name === 'description')

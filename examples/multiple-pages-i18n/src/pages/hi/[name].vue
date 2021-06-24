@@ -1,17 +1,20 @@
 <route lang="yaml">
 meta:
   pageI18nKey: HiPage
-  isGlobal: true
 </route>
 
-<i18n lang="yaml">
+<i18n lang="yaml" global>
 en:
   HiPage:
+    title: Hi {name}
+    description: Hi {name}
     hi: Hi {name}
     dynamic-route: Dynamic route
     back: Back
 es:
   HiPage:
+    title: Hola {name}
+    description: Hola {name}
     hi: Hola {name}
     dynamic-route: Ruta dinámica
     back: Volver

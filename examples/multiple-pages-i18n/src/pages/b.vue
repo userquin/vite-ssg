@@ -49,7 +49,6 @@ const go = () => {
 <route lang="yaml">
 meta:
   pageI18nKey: PageB
-  isGlobal: true
 </route>
 
 <i18n lang="yaml" global>
