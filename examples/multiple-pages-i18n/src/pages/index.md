@@ -18,4 +18,3 @@ Mouse (Client Only):
 
 <i18n-router-link to="/a">/a</i18n-router-link><br>
 <i18n-router-link to="/b">/b</i18n-router-link><br>
-<i18n-router-link to="/nested/deep/b">/nested/deep/b</i18n-router-link>

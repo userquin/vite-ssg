@@ -286,15 +286,21 @@ export function configureClientNavigationGuards(
     base: cookieBase,
   }
 
+  let firstDetectionPending = requiresHandlingFirstRoute
   // handle bad locale or missing required locale
   router.beforeEach((to, from, next) => {
     const paramsLocale = to.params.locale as string
 
     if ((paramsLocale && !localeMap.has(paramsLocale)) || (!paramsLocale && requiredLocaleParam)) {
+      let useLocale = localeRef.value
+      if (firstDetectionPending) {
+        firstDetectionPending = false
+        useLocale = localeInfo.current
+      }
       next(resolveNewRouteLocationNormalized(
         router,
         defaultLocale,
-        requiresHandlingFirstRoute ? localeInfo.current : localeRef.value,
+        useLocale,
         to,
       ).fullPath)
     }
@@ -309,7 +315,7 @@ export function configureClientNavigationGuards(
     router.beforeEach((to, from, next) => {
       const paramsLocale = to.params.locale as string || defaultLocale
       if (isFirstRoute) {
-        isFirstRoute = true
+        isFirstRoute = false
         const currentLocale = localeRef.value
         if (paramsLocale !== currentLocale) {
           next(resolveNewRouteLocationNormalized(

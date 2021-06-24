@@ -52,6 +52,7 @@ function createI18nFactory(
       messages = globalI18nMessageResolver
 
     // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
+    // todo@userquin: review also globalInjection argument
     const i18n = createI18n({
       legacy: false,
       globalInjection: isGlobal,
