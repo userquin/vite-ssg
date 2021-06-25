@@ -310,7 +310,7 @@ You can change the `locale` name using `localePathVariable` on `i18nOptions`.
 
 ### Components and composables
 
-Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` aware components ad composables.
+Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` aware components and composables.
 
 - `i18n-router-view` component:
   `vite-ssg` will register `i18n-router-view` that is the equivalent to `router-view` but `locale` aware.
@@ -530,14 +530,14 @@ meta:
 ```
 
 You can also customize each head page, using `headConfigurer` callback on `createI18n` options, 
-see [Customizing head for each page](####Customizing head for each page) below.
+see [Customizing head for each page](#### Customizing head for each page) below.
 
 **Note about SSG**: 
 
 Since the `i18n` composer will not be available outside the page component, you will need to provide `ssgHeadConfigurer` 
 callback on `createI18n` options if you have to include localized entries from your `page mesages resources`.
 
-### Advance configuration
+### Advanced configuration
 
 By default `vite-ssg` will do a lot for you, but you can customize your own behavior via callbacks using `createI18n`.
 
@@ -684,9 +684,6 @@ ssgOptions: {
     }
 }
 ```
-
-We recommend you to use `<i18n global>` component in your `SFC`, and so you need to follow the instructions
-described in the configuration section.
 
 ## Comparison
 
