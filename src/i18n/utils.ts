@@ -1,9 +1,9 @@
-import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
-import { WritableComputedRef } from '@vue/reactivity'
+import { RouteLocationNormalized, RouteLocationRaw, RouteMeta, Router } from 'vue-router'
+import { isRef, WritableComputedRef } from '@vue/reactivity'
 import { nextTick } from 'vue'
 import { ViteSSGContext } from '../types'
 import { configureRouterBeforeEachEntryServer } from '../utils/utils'
-import { DefaultViteSSGLocale, HeadConfigurer } from './types'
+import { DefaultViteSSGLocale, HeadConfigurer, SSGHeadConfigurer } from './types'
 import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
 import type { I18nOptions, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
@@ -207,6 +207,26 @@ async function configureHead(
     to.meta.injectI18nMeta?.(headObject.value, locale, i18n.global)
 }
 
+async function injectSSGHeadObject(
+  to: RouteLocationNormalized,
+  headObject: Ref<HeadObject>,
+  translate: (key: string) => string | undefined,
+  locale: ViteSSGLocale,
+  ssgHeadConfigurer?: SSGHeadConfigurer,
+) {
+  let resolved = false
+  if (ssgHeadConfigurer) {
+    resolved = await ssgHeadConfigurer(
+      to,
+      headObject,
+      translate,
+      locale,
+    )
+  }
+  if (!resolved)
+    to.meta.injectI18nSSGData?.(headObject.value, locale, translate)
+}
+
 async function loadPageMessages(
   locale: ViteSSGLocale,
   localeRef: WritableComputedRef<Locale>,
@@ -376,103 +396,61 @@ export async function configureRouteEntryServer(
   router: Router,
   context: ViteSSGContext<true>,
   headObject: Ref<HeadObject>,
-  defaultLocale: string,
+  defaultLocale: DefaultViteSSGLocale,
   localeMap: Map<string, ViteSSGLocale>,
   localeRef: WritableComputedRef<Locale>,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   globalMessages: Record<string, any> | undefined,
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
+  ssgHeadConfigurer?: SSGHeadConfigurer,
 ) {
-  /* option 1: go to build.ts::144 ==> if (router && !i18n) should be if (router) */
-  // router.beforeEach(async(to, from, next) => {
-  //   const locale = localeMap.get(localeRef.value)!
-  //
-  //   await loadPageMessages(
-  //     locale,
-  //     localeRef,
-  //     i18n,
-  //     to,
-  //     globalMessages,
-  //     routeMessageResolver,
-  //   )
-  //
-  //   await nextTick()
-  //
-  //   // update header
-  //   await configureHead(
-  //     to,
-  //     headObject,
-  //     i18n,
-  //     locale,
-  //     headConfigurer,
-  //   )
-  //
-  //   next()
-  // })
   // configure router hooks
   configureRouterBeforeEachEntryServer(router, context)
 
-  /* option 2 => go to build.ts::144 ==> if (router && !i18n) should be if (router) */
-  // router.afterEach(async(to) => {
-  //   const locale = localeMap.get(localeRef.value)!
-  //
-  //   await loadPageMessages(
-  //     locale,
-  //     localeRef,
-  //     i18n,
-  //     to,
-  //     globalMessages,
-  //     routeMessageResolver,
-  //   )
-  //
-  //   // update header
-  //   await configureHead(
-  //     to,
-  //     headObject,
-  //     i18n,
-  //     locale,
-  //     headConfigurer,
-  //   )
-  // })
-  // option 3 => go to build.ts::144 ==> if (router) should be if (router && !i18n)
-  // push the current route
-  await router.push(route)
+  router.afterEach(async(to) => {
+    const locale = localeMap.get(localeRef.value)!
+    await nextTick()
 
-  // await router ready
-  await router.isReady()
+    await loadPageMessages(
+      locale,
+      localeRef,
+      i18n,
+      to,
+      globalMessages,
+      routeMessageResolver,
+    )
 
-  await nextTick()
+    await nextTick()
 
-  // prepare data
-  const locale = localeMap.get(localeRef.value)!
+    // update header
+    await configureHead(
+      to,
+      headObject,
+      i18n,
+      locale,
+      headConfigurer,
+    )
+  })
 
-  await nextTick()
-
-  // preload data
-  const to = await router.resolve(route)
-
-  await nextTick()
-
-  await loadPageMessages(
-    locale,
-    localeRef,
-    i18n,
-    to,
-    globalMessages,
-    routeMessageResolver,
-  )
-
-  await nextTick()
-
-  // update header
-  await configureHead(
-    to,
-    headObject,
-    i18n,
-    locale,
-    headConfigurer,
-  )
-
-  await nextTick()
+  // on SSG since the setup method is not called we cannot access the i18n composer
+  // here we can add a callback to be used after server render to inject only title
+  // and description or whatever the user want to inject
+  if (process.env.VITE_SSG === 'true') {
+    context.injectI18nSSG = async() => {
+      const to = router.currentRoute.value
+      const { $t } = context.app.config.globalProperties
+      if ($t && to.meta) {
+        await injectSSGHeadObject(
+          to,
+          headObject,
+          (key) => {
+            return $t(key)
+          },
+          localeMap.get(localeRef.value)!,
+          ssgHeadConfigurer,
+        )
+      }
+    }
+  }
 }

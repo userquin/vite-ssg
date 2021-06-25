@@ -4,7 +4,7 @@ import { HeadClient, HeadObject } from '@vueuse/head'
 // @ts-ignore ignore when vue is not installed
 import { Composer } from 'vue-i18n'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
-import { useAvailableLocales, useI18nRouter } from './i18n/composables'
+import { useAvailableLocales, useI18nRouter, injectHeadObject } from './i18n/composables'
 
 export interface ViteSSGOptions {
   /**
@@ -77,6 +77,7 @@ export interface ViteSSGContext<HasRouter extends boolean = true> {
   isClient: boolean
   // @ts-ignore
   createI18n?: CreateVueI18n
+  injectI18nSSG?: () => Promise<void>
 }
 
 export interface ViteSSGClientOptions {
@@ -94,7 +95,7 @@ export interface ViteSSGClientOptions {
 
 export type RouterOptions = PartialKeys<VueRouterOptions, 'history'> & { base?: string }
 
-export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales, useI18nRouter }
+export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales, useI18nRouter, injectHeadObject }
 
 // extend vue-router meta
 declare module 'vue-router' {
@@ -180,6 +181,27 @@ declare module 'vue-router' {
       head: HeadObject,
       locale: ViteSSGLocale,
       i18nComposer: Composer<Record<string, any>, unknown, unknown>,
+      title?: string,
+      description?: string,
+    ) => HeadObject
+    /**
+     * Inject the following objects to `HeadObject` on `SSG`.
+     *
+     * The rest of data is configured by `injectI18nMeta`.
+     *
+     * 1) `title` head element from `route.meta.title` or looking for it from the composer:
+     * ```html
+     * <title>TITLE</title>
+     * ```
+     * 2) `description` meta head from `route.meta.description` or looking for it from the composer:
+     * ```html
+     * <meta name="description" content="<DESCRIPTION>">
+     * ```
+     */
+    injectI18nSSGData?: (
+      head: HeadObject,
+      locale: ViteSSGLocale,
+      translate: (key: string) => string | undefined,
       title?: string,
       description?: string,
     ) => HeadObject

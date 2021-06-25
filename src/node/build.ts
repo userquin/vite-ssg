@@ -137,11 +137,11 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
   await Promise.all(
     routesPaths.map(async(route) => {
-      const { app, router, head } = await createApp(false, base, {
+      const { app, router, head, injectI18nSSG } = await createApp(false, base, {
         requestUrl: route,
       })
 
-      if (router && !i18n) {
+      if (router) {
         await router.push(route)
         await router.isReady()
       }
@@ -150,6 +150,9 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
       const ctx: SSRContext = {}
       const appHTML = await renderToString(app, ctx)
+
+      if (injectI18nSSG)
+        await injectI18nSSG()
 
       // need to resolve assets so render content first
       const renderedHTML = renderHTML({ indexHTML: transformedIndexHTML, appHTML, initialState })

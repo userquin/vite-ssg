@@ -1,5 +1,6 @@
 // https://developers.google.com/search/docs/advanced/crawling/special-tags
 import { isRef, WritableComputedRef } from '@vue/reactivity'
+import { HeadObject } from '@vueuse/head'
 import { RouterOptions } from '../types'
 import type { Router, RouteRecordRaw } from 'vue-router'
 import type { HeadAttrs } from '@vueuse/head'
@@ -80,6 +81,43 @@ export function prepareHead(
     return headers
   }
   if (route.meta) {
+    route.meta.injectI18nSSGData = (
+      head,
+      locale,
+      translate,
+      title,
+      description,
+    ) => {
+      head.meta = head.meta || []
+      const { titleKey, descriptionKey } = route.meta || {}
+      if (title) {
+        head.title = title
+      }
+      else if (titleKey) {
+        const title = translate(titleKey)
+        if (title && titleKey !== title)
+          head.title = title
+      }
+
+      const metaArray = isRef(head.meta) ? head.meta.value : head.meta
+      const descriptionIdx = metaArray.findIndex(m => m.name === 'description')
+      if (descriptionIdx >= 0)
+        metaArray.splice(descriptionIdx, 1)
+
+      let useDescription = description
+      if (!useDescription && descriptionKey) {
+        useDescription = translate(descriptionKey)
+        if (useDescription && descriptionKey === useDescription)
+          useDescription = undefined
+      }
+      if (useDescription) {
+        metaArray.push({
+          name: 'description',
+          content: useDescription,
+        })
+      }
+      return head
+    }
     route.meta.injectI18nMeta = (
       head,
       locale,

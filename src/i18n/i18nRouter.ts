@@ -55,7 +55,7 @@ function createI18nFactory(
     // todo@userquin: review also globalInjection argument
     const i18n = createI18n({
       legacy: false,
-      globalInjection: isGlobal,
+      globalInjection: true,
       fallbackLocale: defaultLocale,
       availableLocales: availableLocales.map(l => l.locale),
       messages: messages || {},
@@ -250,7 +250,7 @@ export function createI18nRouter(
           router,
           context,
           headObject,
-          defaultLocale,
+          defaultViteSSGLocale,
           localesMap,
           localeRef,
           i18n,

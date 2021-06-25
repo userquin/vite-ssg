@@ -54,11 +54,19 @@ export type HeadConfigurer = (
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
+export type SSGHeadConfigurer = (
+  route: RouteLocationNormalized,
+  headObject: Ref<HeadObject>,
+  translate: (key: string) => string | undefined,
+  locale: ViteSSGLocale,
+) => Promise<boolean> | boolean
+
 export type CreateVueI18n = (
   ctx: ViteSSGContext<true>,
   globalMessageResolver?: I18nGlobalMessageResolver,
   routeMessageResolver?: I18nRouteMessageResolver,
   headConfigurer?: HeadConfigurer,
+  ssgHeadConfigurer?: SSGHeadConfigurer,
 ) => Promise<I18n<Record<string, any>, unknown, unknown, false>>
 
 export interface I18nOptions {

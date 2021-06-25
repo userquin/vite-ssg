@@ -10,11 +10,11 @@ import i18nOptions from './ssg-i18n-options.json'
 const pages = new Map<string, number>()
 
 const config: UserConfig = {
-  // resolve: {
-  //   alias: {
-  //     'vue-i18n': 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js',
-  //   },
-  // },
+  resolve: {
+    alias: {
+      'vue-i18n': 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js',
+    },
+  },
   build: {
     manifest: !process.env.VITE_SSG,
   },
@@ -65,13 +65,13 @@ const config: UserConfig = {
       return i18nOptions
     },
   },
-  // optimizeDeps: {
-  //   include: [
-  //     'vue',
-  //     'vue-i18n',
-  //     'vue-router',
-  //   ],
-  // },
+  optimizeDeps: {
+    include: [
+      'vue',
+      'vue-i18n',
+      'vue-router',
+    ],
+  },
 }
 
 export default config
