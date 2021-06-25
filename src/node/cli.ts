@@ -16,10 +16,6 @@ yargs
       .option('mock', {
         type: 'boolean',
         describe: 'Mock browser globals (window, document, etc.) for SSG',
-      })
-      .option('i18n', {
-        type: 'string',
-        describe: 'I18n JSON configuration file for SSG',
       }),
     async(args) => {
       await build(args)
