@@ -530,7 +530,7 @@ meta:
 ```
 
 You can also customize each head page, using `headConfigurer` callback on `createI18n` options, 
-see [Customizing head for each page](####customizing-head-for-each-page) below.
+see [Customizing head for each page](#customizing-head-for-each-page) below.
 
 **Note about SSG**: 
 
