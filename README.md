@@ -743,7 +743,7 @@ export const createApp = ViteSSG(App, { routes })
 with
 ```ts
 // src/main.ts
-import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg'
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 export const createApp = ViteSSG(
     App, 
