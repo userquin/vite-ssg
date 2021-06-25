@@ -381,6 +381,29 @@ ssgOptions: {
 }
 ```
 
+You also need to configure `i18nOptions` on your `main.ts` when calling `ViteSSG`: 
+```ts
+// src/main.ts
+export const createApp = ViteSSG(
+  App,
+  { routes },
+  (ctx: ViteSSGContext) => {
+    ctx.createI18n?.(ctx, /* other options */)
+  },
+  {
+    i18nOptions: {
+      defaultLocale: 'en',
+      defaultLocaleOnUrl: false,
+      locales: {
+        en: 'English',
+        es: 'Español'
+      }
+    },
+  },
+)
+
+```
+
 ### Localize your SFC pages/components
 
 We recommend use `<i18n global>` component in your `SFC` using external location when the messages are huge or inlined
@@ -526,7 +549,10 @@ meta:
 ```html
 <meta name="google" content="notranslate">
 ```
-6) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
+6) `link`s for alternate urls for each locale, for example ( `en` is the default locale ). Remember that you will
+   need to provide the `base` option when generation html pages, since these `alternate` will require the `href`
+   to include also the protocol, `http or https`, (see [Guidelines for all methods](https://developers.google.com/search/docs/advanced/crawling/localized-versions#all-method-guidelines)).
+   For client side, there is no need to include it, `vite-ssg` will use `window.location.origin`.
 ```html
 <link rel="alternate" hreflang="x-default" href="http://localhost:3000/route">
 <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">
