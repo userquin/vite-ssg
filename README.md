@@ -295,16 +295,16 @@ export default {
 }
 ```
 
-## WIP I18n with `vue-i18n`
+## WIP `vite-ssg/i18n`
 
-This feature will allow you to build your application with a single codebase supporting `i18n` via `vue-i18n@next`.
+This feature will allow you to build your application with a single codebase with a router supporting `i18n` via `vue-i18n@next`.
 
-When building, `vite-ssg` will generate all html pages for all your routes for all your locales under its corresponding 
+When building, `vite-ssg/i18n` will generate all html pages for all your routes for all your locales under its corresponding 
 locale directory. 
 
-You only need to configure `vite-ssg` properly and let it do its magic.
+You only need to configure `vite-ssg/i18n` properly and let it do its magic.
 
-By default, `vite-ssg` will register `/:locale?` as the parent of all your routes.
+By default, `vite-ssg/i18n` will register `/:locale?` as the parent of all your routes.
 
 You can change the `locale` name using `localePathVariable` on `i18nOptions`.
 
@@ -313,10 +313,10 @@ The default locale will not be included in the browser url, unless it is explici
 
 ### Components and composables
 
-Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` aware components and composables.
+Since `vite-ssg/i18n` will handle `i18n` for you, you only need to use some `locale` aware components and some composables.
 
-- `i18n-router-view` component: `vite-ssg` will register `i18n-router-view` that is the equivalent to `router-view` but `locale` aware.
-  You can use it without having to include the `locale` on it, `vite-ssg` will take care for you.
+- `i18n-router-view` component: `vite-ssg/i18n` will register `i18n-router-view` that is the equivalent to `router-view` but `locale` aware.
+  You can use it without having to include the `locale` on it, `vite-ssg/i18n` will take care for you.
 
   For example, instead using `router-view` passing the `locale` to the `:to` props,
   use `i18n-router-view` and forget the `locale` param.
@@ -385,7 +385,7 @@ You also need to configure `i18nOptions` on your `main.ts` when calling `ViteSSG
 
 ```ts
 // src/main.ts
-import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg//i18n'
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 export const createApp = ViteSSG(
     App,
@@ -410,7 +410,7 @@ export const createApp = ViteSSG(
 ### Localize your SFC pages/components
 
 We recommend use `<i18n global>` component in your `SFC` using external location when the messages are huge or inlined
-when messages are a few.
+when messages are few.
 
 In both cases, you need to install `@intlify/vite-plugin-vue-i18n` as `dev dependency`:
 `npm i -D @intlify/vite-plugin-vue-i18n` or `yarn add -D @intlify/vite-plugin-vue-i18n`.
@@ -464,7 +464,7 @@ import VueI18n from '@intlify/vite-plugin-vue-i18n'
 plugins: [
   VueI18n(
     // other options
-    includes: ['locales/**', 'locales/pages/**'],
+    includes: ['locales/**', 'locales/pages/**']
   )
 ]
 ```
@@ -497,7 +497,7 @@ es:
 
 ### Head configuration
 
-`vite-ssg can handle` all head info for you, but requires some hints to automatically to do it: it requires **only**
+`vite-ssg/i18n` can handle all head info for you, but requires some hints to automatically to do it: it requires **only**
 the `pageI18nKey` on the meta route (by default it will use the `route name or route path` with `/` prefix).
 
 You must configure `pageI18nKey` on your routes and so you can reference with your `pageI18nKey`:
@@ -568,17 +568,17 @@ is present:
 <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">
 ```
 
-You can also customize each head page, using `headConfigurer` callback on `createI18n` options, 
+You can also customize each head page, using `headConfigurer` callback on `i18nOptions` option, 
 see [Customizing head for each page](#customizing-head-for-each-page) below.
 
 **Note about SSG**: 
 
 Since the `i18n` composer will not be available outside the page component, you will need to provide `ssgHeadConfigurer` 
-callback on `createI18n` options if you have to include localized entries from your `page messages resources`.
+callback on `i18nOptions` option if you have to include localized entries from your `page messages resources`.
 
 ### Advanced configuration
 
-By default `vite-ssg` will do a lot for you, but you can customize your own behavior via callbacks using `createI18n`.
+By default `vite-ssg/i18n` will do a lot for you, but you can customize your own behavior via callbacks using `i18nOptions` option.
 
 #### Registering I18n global messages
 
@@ -587,7 +587,7 @@ texts, dialog messages, etc...).
 
 You can provide these `global messages` using the callback `globalMessageResolver`, for example:
 ```ts
-// src/modules/main.ts
+// src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 // import i18n resources
@@ -619,11 +619,11 @@ export const createApp = ViteSSG(
 #### Loading custom page messages resouces
 
 Instead of using `<i18n>` component on your `SFC` page components, you can customize it using `import.meta.glob`, `import.meta.globEager`
-or `dynamic imports` on `routeMessages` callback in from `createI18n`. 
+or `dynamic imports` on `routeMessages` callback in from `i18nOptions` option. 
 
 `vite-ssg` will take care for you exposing under `i18n` global composer. For example:
 ```ts
-// src/modules/main.ts
+// src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 // import i18n resources
@@ -653,19 +653,20 @@ export const createApp = ViteSSG(
                     console.error(`something was wrong loading route page messages: ${to.path}`, e)
                     return undefined
                 }
-            },
-        },
+            }
+        }
     },
     (ctx: ViteI18nSSGContext) => {
 
-    },
+    }
 }
 ```
 
 #### Customizing head for each page
 
-You can customize the head of each page using `headConfigurer` callback from `createI18n`:
+You can customize the head of each page using `headConfigurer` callback from `i18nOptions` option:
 ```ts
+// src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 // import i18n resources
@@ -722,7 +723,6 @@ export const createApp = ViteSSG(
 
 ```
 
-
 ### Changes to be made for existing applications
 
 If you want to migrate your existing application with `i18n` support, you need to do the following:
@@ -732,15 +732,17 @@ If you want to migrate your existing application with `i18n` support, you need t
 2) change all `useRouter()` to `useI18nRouter()`
 3) change all `useI18n()`, if you are using it, with `useGlobalI18n()`
 4) change all `<router-link>` to `<i18n-router-link>`: just keep all props, only change the component
-5) remove all `useHead` in all your pages: `vite-ssg` will handle changes for you
+5) remove all `useHead` in all your pages: `vite-ssg/i18n` will handle changes for you
 6) if you need to configure `vue-i18n` global messages, you need to change:
 ```ts
+// src/main.ts
 import { ViteSSG } from 'vite-ssg/i18n'
 
 export const createApp = ViteSSG(App, { routes })
 ```
 with
 ```ts
+// src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg'
 
 export const createApp = ViteSSG(
@@ -754,7 +756,7 @@ export const createApp = ViteSSG(
                 en: 'English',
                 es: 'Español'
             }
-        },
+        }
     },
     (ctx: ViteI18nSSGContext) => {
         
