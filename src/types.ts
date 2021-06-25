@@ -132,6 +132,12 @@ declare module 'vue-router' {
      */
     descriptionKey?: string
     /**
+     * Key for `og:image`.
+     *
+     * @default '${pageI18nKey}.image'
+     */
+    imageKey?: string
+    /**
      * Are page messages registered globally?
      *
      * Beware using `isGlobal: false`, since you will need to
@@ -184,6 +190,7 @@ declare module 'vue-router' {
       i18nComposer: Composer<Record<string, any>, unknown, unknown>,
       title?: string,
       description?: string,
+      image?: string,
     ) => HeadObject
     /**
      * Inject the following objects to `HeadObject` on `SSG`.
@@ -202,9 +209,10 @@ declare module 'vue-router' {
     injectI18nSSGData?: (
       head: HeadObject,
       locale: ViteSSGLocale,
-      translate: (key: string) => string | undefined,
+      translate: (key: string, locale?: string, params?: any) => string | undefined,
       title?: string,
       description?: string,
+      image?: string
     ) => HeadObject
     /**
      * Meta tags for alternative URLs.

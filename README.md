@@ -495,11 +495,9 @@ es:
 ### Head configuration
 
 `vite-ssg` can handle all head info for you, but requires some hints to automatically
-to do it: it requires **only** the `pageI18nKey` on the `meta` route (by default it will use the `route path`
-with `/` prefix).
+to do it: it requires **only** the `pageI18nKey` on the `meta` route.
 
-You can configure your own `pageI18nKey` on your routes and so you can reference with your `pageI18nKey`
-instead using `route path`:
+You must configure `pageI18nKey` on your routes and so you can reference with your `pageI18nKey`:
 ```ts
 const routes = [
   { path: '/', meta: { pageI18nKey: 'Index' }, component: defineAsyncComponent(() => import('./pages/home.vue')) },
@@ -533,11 +531,13 @@ meta:
 ```html
 <html lang="en">
 ```
-2) `title` head element from `route.meta.title` or looking for it from the composer using `${route.meta.pageI18nKey}.${route.meta.titleKey}`:
+2) `title` and `og:title` head entries from `route.meta.title` or looking for it from the `i18n` composer using 
+`${route.meta.pageI18nKey}.${route.meta.titleKey}`:
 ```html
 <title><TITLE></title>
 ```
-`description` meta head from `route.meta.description` or looking for it from the composer using `${route.meta.pageI18nKey}.${route.meta.descriptionKey}`:
+3) `description` and `og:description` meta head entries from `route.meta.description` or looking for it from the `i18n` 
+composer using `${route.meta.pageI18nKey}.${route.meta.descriptionKey}`:
 ```html
 <meta name="description" content="<DESCRIPTION>">
 ```
@@ -545,11 +545,18 @@ meta:
 ```html
 <meta property="og:locale" content="en">
 ```
-5) Meta tag to avoid browser showing page translation popup:
+5) Meta tags for `og:image` and `twitter:card` from `route.meta.image` or looking for it from the `i18n` 
+composer using `${route.meta.pageI18nKey}.${route.meta.imageKey}`, `twitter:card` will be added only if `og:image` 
+is present:
+```html
+<meta property="og:image" content="<IMAGE>">
+<meta property="twitter:card" content="summary_large_image">
+```   
+6) Meta tag to avoid browser showing page translation popup:
 ```html
 <meta name="google" content="notranslate">
 ```
-6) `link`s for alternate urls for each locale, for example ( `en` is the default locale ). Remember that you will
+7) `link`s for alternate urls for each locale, for example ( `en` is the default locale ). Remember that you will
    need to provide the `base` option when generation html pages, since these `alternate` will require the `href`
    to include also the protocol, `http or https`, (see [Guidelines for all methods](https://developers.google.com/search/docs/advanced/crawling/localized-versions#all-method-guidelines)).
    For client side, there is no need to include it, `vite-ssg` will use `window.location.origin`.
@@ -626,7 +633,7 @@ export const install = (ctx: ViteSSGContext) => {
 
 #### Customizing head for each page
 
-You can customize the head of each page using `headConfigurer`  callback from `createI18n`:
+You can customize the head of each page using `headConfigurer` callback from `createI18n`:
 ```ts
 import { ViteSSGContext } from 'vite-ssg'
 

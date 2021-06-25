@@ -210,7 +210,7 @@ async function configureHead(
 async function injectSSGHeadObject(
   to: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
-  translate: (key: string) => string | undefined,
+  translate: (key: string, locale?: string, params?: any) => string | undefined,
   locale: ViteSSGLocale,
   ssgHeadConfigurer?: SSGHeadConfigurer,
 ) {

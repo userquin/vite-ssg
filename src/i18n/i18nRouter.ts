@@ -144,6 +144,9 @@ export function createI18nRouter(
     if (!r.meta.descriptionKey)
       r.meta.descriptionKey = `${r.meta.pageI18nKey}.description`
 
+    if (!r.meta.imageKey)
+      r.meta.imageKey = `${r.meta.pageI18nKey}.image`
+
     if (r.meta.isGlobal === undefined)
       r.meta.isGlobal = true
 

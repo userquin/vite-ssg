@@ -2,7 +2,7 @@
 import { isRef, WritableComputedRef } from '@vue/reactivity'
 import { RouterOptions } from '../types'
 import type { Router, RouteRecordRaw } from 'vue-router'
-import type { HeadAttrs } from '@vueuse/head'
+import type { HeadAttrs, HeadObject } from '@vueuse/head'
 import type { Crawling, ViteSSGLocale } from './types'
 
 function addGoogleNoTranslate(crawling: Crawling) {
@@ -58,6 +58,58 @@ function addMetaTagsForAlternativeURLs(
   return crawling
 }
 
+function updateMetaHead(head: HeadObject, metaArray: HeadAttrs[], title?: string, description?: string, image?: string) {
+  let idx = metaArray.findIndex(m => m.property === 'og:title')
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+
+  idx = metaArray.findIndex(m => m.name === 'description')
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+
+  idx = metaArray.findIndex(m => m.property === 'og:description')
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+
+  idx = metaArray.findIndex(m => m.property === 'og:image')
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+
+  idx = metaArray.findIndex(m => m.property === 'twitter:card')
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+
+  if (title) {
+    head.title = title
+    metaArray.push({
+      property: 'og:title',
+      content: title,
+    })
+  }
+
+  if (description) {
+    metaArray.push({
+      name: 'description',
+      content: description,
+    })
+    metaArray.push({
+      property: 'og:description',
+      content: description,
+    })
+  }
+
+  if (image) {
+    metaArray.push({
+      property: 'og:image',
+      content: image,
+    })
+    metaArray.push({
+      property: 'twitter:card',
+      content: 'summary_large_image',
+    })
+  }
+}
+
 export function prepareHead(
   router: Router,
   routerOptions: RouterOptions,
@@ -86,43 +138,49 @@ export function prepareHead(
       translate,
       title,
       description,
+      image,
     ) => {
       head.meta = head.meta || []
-      const { titleKey, descriptionKey } = route.meta || {}
-      if (title) {
-        head.title = title
-      }
-      else if (titleKey) {
-        const title = translate(titleKey)
-        if (title && titleKey !== title)
-          head.title = title
-      }
-
       const metaArray = isRef(head.meta) ? head.meta.value : head.meta
-      const descriptionIdx = metaArray.findIndex(m => m.name === 'description')
-      if (descriptionIdx >= 0)
-        metaArray.splice(descriptionIdx, 1)
+      const { titleKey, descriptionKey, imageKey } = route.meta || {}
+
+      let params: Record<string, any> = {}
+      const useRoute = router.currentRoute.value
+      if (useRoute && Object.keys(useRoute.params).length > 0)
+        params = useRoute.params
+
+      let useTitle = title
+      if (!useTitle && titleKey) {
+        useTitle = translate(titleKey, locale.locale, params)
+        if (useTitle && titleKey === useTitle)
+          useTitle = undefined
+      }
 
       let useDescription = description
       if (!useDescription && descriptionKey) {
-        useDescription = translate(descriptionKey)
+        useDescription = translate(descriptionKey, locale.locale, params)
         if (useDescription && descriptionKey === useDescription)
           useDescription = undefined
       }
-      if (useDescription) {
-        metaArray.push({
-          name: 'description',
-          content: useDescription,
-        })
+
+      let useImage = image
+      if (!useImage && imageKey) {
+        useImage = translate(imageKey)
+        if (useImage && imageKey === useImage)
+          useImage = undefined
       }
+
+      updateMetaHead(head, metaArray, useTitle, useDescription, useImage)
+
       return head
     }
     route.meta.injectI18nMeta = (
       head,
       locale,
       i18nComposer,
-      title?: string,
-      description?: string,
+      title,
+      description,
+      image,
     ) => {
       head.meta = head.meta || []
       const metaArray = isRef(head.meta) ? head.meta.value : head.meta
@@ -140,56 +198,25 @@ export function prepareHead(
         }
       }
 
-      const isGlobal = route.meta!.isGlobal
+      let params: Record<string, any> = {}
 
-      if (isGlobal) {
-        let params: Record<string, any> = {}
-        const route = router.currentRoute.value
-        if (route && Object.keys(route.params).length > 0)
-          params = route.params
+      const useRoute = router.currentRoute.value
+      if (useRoute && Object.keys(useRoute.params).length > 0)
+        params = useRoute.params
 
-        // 2) title
-        const titleText = title || (route.meta!.titleKey && i18nComposer.te(route.meta!.titleKey)
-          ? i18nComposer.t(route.meta!.titleKey, params)
-          : null)
-        if (titleText)
-          head.title = titleText
+      const titleText = title || (route.meta!.titleKey && i18nComposer.te(route.meta!.titleKey)
+        ? i18nComposer.t(route.meta!.titleKey, params)
+        : undefined)
 
-        // 3) description
-        const descriptionText = description || (route.meta!.descriptionKey && i18nComposer.te(route.meta!.descriptionKey)
-          ? i18nComposer.t(route.meta!.descriptionKey, params)
-          : null)
+      const descriptionText = description || (route.meta!.descriptionKey && i18nComposer.te(route.meta!.descriptionKey)
+        ? i18nComposer.t(route.meta!.descriptionKey, params)
+        : undefined)
 
-        const descriptionIdx = metaArray.findIndex(m => m.name === 'description')
-        if (descriptionIdx >= 0)
-          metaArray.splice(descriptionIdx, 1)
+      const imageText = image || (route.meta!.imageKey && i18nComposer.te(route.meta!.imageKey)
+        ? i18nComposer.t(route.meta!.imageKey)
+        : undefined)
 
-        if (descriptionText) {
-          metaArray.push({
-            name: 'description',
-            content: descriptionText,
-          })
-        }
-      }
-
-      // 4) Meta tag for `og:locale` for the current locale
-      const ogLocaleIdx = metaArray.findIndex(m => m.property === 'og:locale')
-
-      if (ogLocaleIdx >= 0)
-        metaArray.splice(ogLocaleIdx, 1)
-
-      metaArray.push({
-        property: 'og:locale',
-        content: locale.locale,
-      })
-
-      // 5) Meta tag to avoid browser showing page translation popup
-      if (metaArray.find(m => m.property === 'google') === null) {
-        metaArray.push({
-          property: 'google',
-          content: 'notranslate',
-        })
-      }
+      updateMetaHead(head, metaArray, titleText, descriptionText, imageText)
 
       // 6) link`s for alternate urls for each locale
       if (!head.link && crawling.extractAlternateUrls)

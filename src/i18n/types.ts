@@ -57,7 +57,7 @@ export type HeadConfigurer = (
 export type SSGHeadConfigurer = (
   route: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
-  translate: (key: string) => string | undefined,
+  translate: (key: string, locale?: string, params?: any) => string | undefined,
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
