@@ -308,12 +308,14 @@ By default, `vite-ssg` will register `/:locale?` as the parent of all your route
 
 You can change the `locale` name using `localePathVariable` on `i18nOptions`.
 
+The default locale will not be included in the browser url, unless it is explicitly configured in the 
+`defaultLocaleOnUrl: true` option, or your routes contain a dynamic route as a higher level route.
+
 ### Components and composables
 
 Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` aware components and composables.
 
-- `i18n-router-view` component:
-  `vite-ssg` will register `i18n-router-view` that is the equivalent to `router-view` but `locale` aware.
+- `i18n-router-view` component: `vite-ssg` will register `i18n-router-view` that is the equivalent to `router-view` but `locale` aware.
   You can use it without having to include the `locale` on it, `vite-ssg` will take care for you.
 
   For example, instead using `router-view` passing the `locale` to the `:to` props,
@@ -439,7 +441,6 @@ plugins: [
     includes: ['locales/**', 'locales/pages/**'],
   )
 ]
-
 ```
 
 For example, you can use `yml/yaml` files (you can also use `json` or `json5`):

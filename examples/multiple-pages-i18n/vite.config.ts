@@ -33,6 +33,8 @@ const config: UserConfig = {
     }),
     // https://github.com/intlify/vite-plugin-vue-i18n
     VueI18n({
+      runtimeOnly: true,
+      compositionOnly: true,
       include: [
         path.resolve(__dirname, 'locales/**'),
         path.resolve(__dirname, 'locales/pages/**'),
