@@ -735,7 +735,7 @@ If you want to migrate your existing application with `i18n` support, you need t
 5) remove all `useHead` in all your pages: `vite-ssg` will handle changes for you
 6) if you need to configure `vue-i18n` global messages, you need to change:
 ```ts
-import { ViteSSG } from 'vite-ssg'
+import { ViteSSG } from 'vite-ssg/i18n'
 
 export const createApp = ViteSSG(App, { routes })
 ```
