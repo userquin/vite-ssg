@@ -21,7 +21,7 @@ es:
 </i18n>
 
 <script setup lang="ts">
-import { useI18nRouter, useGlobalI18n } from 'vite-ssg'
+import { useI18nRouter, useGlobalI18n } from 'vite-ssg/i18n'
 import { defineProps } from 'vue'
 
 const props = defineProps({

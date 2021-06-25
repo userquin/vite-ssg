@@ -30,7 +30,7 @@
 -->
 <script setup lang="ts">
 import { defineProps, onMounted, ref } from 'vue'
-import { useI18nRouter, useGlobalI18n } from 'vite-ssg'
+import { useI18nRouter, useGlobalI18n } from 'vite-ssg/i18n'
 
 const props = defineProps({ locale: String })
 
@@ -38,11 +38,6 @@ const router = useI18nRouter()
 const { t } = useGlobalI18n()
 
 const name = ref('')
-
-onMounted(() => {
-  console.log(t('PageB.title'))
-  console.log(t('PageB.description'))
-})
 
 const go = () => {
   if (name.value)

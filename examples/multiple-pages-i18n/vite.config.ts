@@ -64,6 +64,7 @@ const config: UserConfig = {
       if (process.env.I18N_BASE)
         (i18nOptions as any).base = process.env.I18N_BASE
 
+      console.log(i18nOptions)
       return i18nOptions
     },
   },

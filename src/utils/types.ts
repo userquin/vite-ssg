@@ -1,4 +1,4 @@
-import { ViteSSGLocale } from '../i18n/types'
+import { I18nOptions, ViteSSGLocale } from '../i18n/types'
 import { RouterOptions } from '../types'
 
 export type I18nConfigurationOptions = {
@@ -7,8 +7,6 @@ export type I18nConfigurationOptions = {
   defaultLocaleOnUrl: boolean
   localePathVariable: string
   cookieName: string
-  prefix: string
-  isGlobal: boolean
   base?: string
 }
 
@@ -21,5 +19,6 @@ export type RouterConfiguration = {
     requestUrl?: string
     localeCookie?: string
   }
-  i18n?: I18nConfigurationOptions
+  i18nOptions: I18nOptions
+  i18n: I18nConfigurationOptions
 }

@@ -329,7 +329,7 @@ Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` 
   ```html
   // src/App.vue
   <script setup lang="ts">
-  import { useAvailableLocales } from 'vite-ssg'
+  import { useAvailableLocales } from 'vite-ssg/i18n'
     
   const { availableLocales, route } = useAvailableLocales()
     
@@ -381,25 +381,28 @@ ssgOptions: {
 }
 ```
 
-You also need to configure `i18nOptions` on your `main.ts` when calling `ViteSSG`: 
+You also need to configure `i18nOptions` on your `main.ts` when calling `ViteSSG`:
+
 ```ts
 // src/main.ts
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg//i18n'
+
 export const createApp = ViteSSG(
-  App,
-  { routes },
-  (ctx: ViteSSGContext) => {
-    ctx.createI18n?.(ctx, /* other options */)
-  },
-  {
-    i18nOptions: {
-      defaultLocale: 'en',
-      defaultLocaleOnUrl: false,
-      locales: {
-        en: 'English',
-        es: 'Español'
-      }
+    App,
+    {routes},
+    {
+        i18nOptions: {
+            defaultLocale: 'en',
+            defaultLocaleOnUrl: false,
+            locales: {
+                en: 'English',
+                es: 'Español'
+            }
+        },
     },
-  },
+    (ctx: ViteI18nSSGContext) => {
+       
+    },
 )
 
 ```
@@ -439,7 +442,7 @@ es:
     description: Descripción  de la página A
 </i18n>
 <script setup lang="ts">
-  import { useGlobalI18n } from 'vite-ssg'
+  import { useGlobalI18n } from 'vite-ssg/i18n'
   
   import { t } = useGlobalI18n()
 </script>
@@ -471,7 +474,7 @@ For example, you can use `yml/yaml` files (you can also use `json` or `json5`):
 // src/pages/page-a.vue
 <i18n global src="../../locales/pages/page-a.yml"></i18n>
 <script setup lang="ts">
-  import { useGlobalI18n } from 'vite-ssg'
+  import { useGlobalI18n } from 'vite-ssg/i18n'
 
   import { t } = useGlobalI18n()
 </script>
@@ -494,8 +497,8 @@ es:
 
 ### Head configuration
 
-`vite-ssg` can handle all head info for you, but requires some hints to automatically
-to do it: it requires **only** the `pageI18nKey` on the `meta` route.
+`vite-ssg can handle` all head info for you, but requires some hints to automatically to do it: it requires **only**
+the `pageI18nKey` on the meta route (by default it will use the `route name or route path` with `/` prefix).
 
 You must configure `pageI18nKey` on your routes and so you can reference with your `pageI18nKey`:
 ```ts
@@ -517,7 +520,7 @@ meta:
 <i18n global src="../../locales/pages/page-a.yml"></i18n>
 
 <script setup lang="ts">
-  import { useGlobalI18n } from 'vite-ssg'
+  import { useGlobalI18n } from 'vite-ssg/i18n'
 
   import { t } = useGlobalI18n()
 </script>
@@ -526,7 +529,7 @@ meta:
 </template>
 ```
 
-#### What will `vite-ssg` include for you on the head page?
+#### What will `vite-ssg/i18n` include for you on the head page?
 1) `lang` attribute for `html` element:
 ```html
 <html lang="en">
@@ -584,50 +587,78 @@ texts, dialog messages, etc...).
 
 You can provide these `global messages` using the callback `globalMessageResolver`, for example:
 ```ts
-import { ViteSSGContext } from 'vite-ssg'
+// src/modules/main.ts
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 // import i18n resources
 // https://vitejs.dev/guide/features.html#glob-import
 const globalMessages: any = Object.fromEntries(Object.entries(import.meta.globEager('../../locales/*.yml'))
-  .map(([key, value]) => [key.slice(14, -4), value.default]),
+    .map(([key, value]) => [key.slice(14, -4), value.default]),
 )
 
-export const install = (ctx: ViteSSGContext) => {
-  ctx.createI18n?.(ctx, globalMessages)
+export const createApp = ViteSSG(
+    App,
+    { routes },
+    {
+        i18nOptions: {
+            defaultLocale: 'en',
+            defaultLocaleOnUrl: false,
+            locales: {
+                en: 'English',
+                es: 'Español'
+            },
+            globalMessages,
+        },
+    },
+    (ctx: ViteI18nSSGContext) => {
+
+    },
 }
 ```
 
 #### Loading custom page messages resouces
 
 Instead of using `<i18n>` component on your `SFC` page components, you can customize it using `import.meta.glob`, `import.meta.globEager`
-or `dynamic imports` on `routeMessageResolver` callback in from `createI18n`. 
+or `dynamic imports` on `routeMessages` callback in from `createI18n`. 
 
 `vite-ssg` will take care for you exposing under `i18n` global composer. For example:
 ```ts
-// src/modules/i18n.ts
-import { ViteSSGContext } from 'vite-ssg'
+// src/modules/main.ts
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 // import i18n resources
 // https://vitejs.dev/guide/features.html#glob-import
 const globalMessages: any = Object.fromEntries(Object.entries(import.meta.globEager('../../locales/*.yml'))
-  .map(([key, value]) => [key.slice(14, -4), value.default]),
+    .map(([key, value]) => [key.slice(14, -4), value.default]),
 )
 
-export const install = (ctx: ViteSSGContext) => {
-  ctx.createI18n?.(
-    ctx,
-    globalMessages,
-    async(locale, to) => {
-      try {
-        const messagesModule = await import(/* @vite-ignore */ `../../locales/pages/${to.meta.pageI18nKey}.yml`)
-        return messagesModule.default || messagesModule
-      }
-      catch (e) {
-        console.error(`something was wrong loading route page messages: ${to.path}`, e)
-        return undefined
-      }
+export const createApp = ViteSSG(
+    App,
+    { routes },
+    {
+        i18nOptions: {
+            defaultLocale: 'en',
+            defaultLocaleOnUrl: false,
+            locales: {
+                en: 'English',
+                es: 'Español'
+            },
+            globalMessages,
+            async routeMessages(locale, to) {
+                try {
+                    const messagesModule = await import(/* @vite-ignore */ `../../locales/pages/${to.meta.pageI18nKey}.yml`)
+                    return messagesModule.default || messagesModule
+                }
+                catch (e) {
+                    console.error(`something was wrong loading route page messages: ${to.path}`, e)
+                    return undefined
+                }
+            },
+        },
     },
-  )
+    (ctx: ViteI18nSSGContext) => {
+
+    },
 }
 ```
 
@@ -635,7 +666,7 @@ export const install = (ctx: ViteSSGContext) => {
 
 You can customize the head of each page using `headConfigurer` callback from `createI18n`:
 ```ts
-import { ViteSSGContext } from 'vite-ssg'
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
 // import i18n resources
 // https://vitejs.dev/guide/features.html#glob-import
@@ -643,40 +674,52 @@ const globalMessages: any = Object.fromEntries(Object.entries(import.meta.globEa
   .map(([key, value]) => [key.slice(14, -4), value.default]),
 )
 
-export const install = (ctx: ViteSSGContext) => {
-  ctx.createI18n?.(
-    ctx,
-    globalMessages,
-    /* routePageConfigurer*/ undefined,
-    async(route, headObject, i18nComposer, locale) => {
-      const meta = route.meta
-      if (meta && meta.injectI18nMeta) {
-        // you can delegate to default behavior
-        headObject.value = meta.injectI18nMeta(
-          headObject.value,
-          locale,
-          i18nComposer,
-        )
-        // you can customize the entire head object
-        /*
-        const routeName = route.name?.toString() || route.path
-        // we can add what we want, also change the entire headObject
-        meta.injectI18nMeta(
-          headObject.value,
-          locale,
-          i18nComposer,
-          i18nComposer.t(`page-${routeName}.title`),
-          i18nComposer.t(`page-${routeName}.description`),
-        )
-        */
-        // or you can change the entire head object page
-        // headObject = await import()
-      }
-
-      return true
+export const createApp = ViteSSG(
+    App,
+    { routes },
+    {
+        i18nOptions: {
+            defaultLocale: 'en',
+            defaultLocaleOnUrl: false,
+            locales: {
+                en: 'English',
+                es: 'Español'
+            },
+            globalMessages,
+            async headConfigurer(route, headObject, i18nComposer, locale) {
+                const meta = route.meta
+                if (meta && meta.injectI18nMeta) {
+                    // you can delegate to default behavior
+                    headObject.value = meta.injectI18nMeta(
+                        headObject.value,
+                        locale,
+                        i18nComposer,
+                    )
+                    // you can customize the entire head object
+                    /*
+                    const routeName = route.name?.toString() || route.path
+                    // we can add what we want, also change the entire headObject
+                    meta.injectI18nMeta(
+                      headObject.value,
+                      locale,
+                      i18nComposer,
+                      i18nComposer.t(`page-${routeName}.title`),
+                      i18nComposer.t(`page-${routeName}.description`),
+                    )
+                    */
+                    // or you can change the entire head object page
+                    // headObject = await import()
+                }
+            
+                return true
+            },
+        },
     },
-  )
-}
+    (ctx: ViteI18nSSGContext) => {
+
+    },
+)
+
 ```
 
 
@@ -692,22 +735,39 @@ If you want to migrate your existing application with `i18n` support, you need t
 5) remove all `useHead` in all your pages: `vite-ssg` will handle changes for you
 6) if you need to configure `vue-i18n` global messages, you need to change:
 ```ts
+import { ViteSSG } from 'vite-ssg'
+
 export const createApp = ViteSSG(App, { routes })
 ```
 with
 ```ts
-export const createApp = ViteSSG(App, { routes }, {
-    (ctx: ViteSSGContext) => {
-        ctx.createI18n?.(ctx, /* options */)
-    }
-})
+import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg'
+
+export const createApp = ViteSSG(
+    App, 
+    { routes },
+    {
+        i18nOptions: {
+            defaultLocale: 'en',
+            defaultLocaleOnUrl: false,
+            locales: {
+                en: 'English',
+                es: 'Español'
+            }
+        },
+    },
+    (ctx: ViteI18nSSGContext) => {
+        
+    },
+)
 ```
 7) add `i18nOptions` configuration to `ssgOptions` on `vite.config.ts` file:
 ```ts
 // vite.config.ts
 ssgOptions: {
     // other options
-    ...,
+    ...
+    // i18nOptions
     i18nOptions() {
         return {
             defaultLocale: 'en',

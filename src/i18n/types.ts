@@ -1,21 +1,10 @@
-import { Composer, I18n } from 'vue-i18n'
-import { ViteSSGContext } from '../types'
+import { Composer, I18n, VueI18n } from 'vue-i18n'
+import { ViteSSGClientOptions, ViteSSGContext, ViteSSGOptions } from '../types'
+import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n } from './composables'
 import type { Locale } from 'vue-i18n'
-import type { HeadAttrs, HeadObject } from '@vueuse/head'
-import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
+import type { HeadAttrs, HeadClient, HeadObject } from '@vueuse/head'
+import type { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import type { Ref } from 'vue'
-
-export type Crawling = {
-  // https://developers.google.com/search/docs/advanced/crawling/special-tags
-  noTranslate?: HeadAttrs
-  // localized versions of your page
-  // https://developers.google.com/search/docs/advanced/crawling/localized-versions
-  localizedVersions?: Record<string, HeadAttrs>
-  /**
-   * Extract head entries.
-   */
-  extractAlternateUrls?: () => HeadAttrs[]
-}
 
 export type ViteSSGLocale = {
   locale: Locale
@@ -34,46 +23,38 @@ export type AvailableLocale = {
   to: RouteLocationRaw
 }
 
-export type LocaleInfo = {
-  current: Locale
-  firstDetection: boolean
-  locales: Record<Locale, ViteSSGLocale>
-}
-
-export type I18nGlobalMessageResolver = () => Promise<Record<string, any>> | Record<string, any>
-
-export type I18nRouteMessageResolver = (
+export type I18nRouteMessages = (
   locale: ViteSSGLocale,
   to: RouteLocationNormalized
 ) => (Promise<Record<string, any>> | Record<string, any> | undefined)
 
-export type HeadConfigurer = (
+export type I18nHeadConfigurer = (
   route: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
   i18nComposer: Composer<Record<string, any>, unknown, unknown>,
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
-export type SSGHeadConfigurer = (
+export type I18nSSGHeadConfigurer = (
   route: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
   translate: (key: string, locale?: string, params?: any) => string | undefined,
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
-export type CreateVueI18n = (
-  ctx: ViteSSGContext<true>,
-  globalMessageResolver?: I18nGlobalMessageResolver,
-  routeMessageResolver?: I18nRouteMessageResolver,
-  headConfigurer?: HeadConfigurer,
-  ssgHeadConfigurer?: SSGHeadConfigurer,
-) => Promise<I18n<Record<string, any>, unknown, unknown, false>>
-
 export interface I18nOptions {
   /**
    * Default locale for the application.
    */
   defaultLocale: Locale
+  /**
+   * Locale and its description.
+   *
+   * The `locale description` should be in its own `locale`, for example:
+   *
+   * `'en-US': 'American English'` or `'es-ES': 'Español de España'`
+   */
+  locales: Record<string, string>
   /**
    * Should default locale be shown in the url?
    *
@@ -93,90 +74,189 @@ export interface I18nOptions {
    */
   cookieName?: string
   /**
-   * The remote url for generating `crawling` info.
+   * The remote url for generating `alternate` info.
    */
   base?: string
   /**
-   * Locale and its description.
-   *
-   * The `locale description` should be in its own `locale`, for example:
-   *
-   * `'en-US': 'American English'` or `'es-ES': 'Español de España'`
+   * Global messages resources.
    */
-  locales: Record<string, string>
+  globalMessages?: () => Promise<Record<string, any>> | Record<string, any>
   /**
-   * Page messages info to localize the title and the description.
+   * If not using `<i18n>` custom block on your `SFC` page component, you can customize configureing this callback.
    */
-  pageMessagesInfo?: {
+  routeMessages?: I18nRouteMessages
+  /**
+   * If you need to customize the head configure this callback.
+   */
+  headConfigurer?: I18nHeadConfigurer
+  /**
+   * Only available for build and `SSG`.
+   */
+  ssgHeadConfigurer?: I18nSSGHeadConfigurer
+}
+
+export interface ViteI18nSSGContext extends ViteSSGContext<true> {
+  router: Router
+  head: HeadClient
+  i18n: I18n<Record<string, any>, unknown, unknown, false>
+  requiresMapDefaultLocale?: boolean
+  injectI18nSSG?: () => Promise<void>
+}
+
+export interface ViteI18nSSGOptions extends ViteSSGOptions {
+  /**
+   * I18n options.
+   */
+  i18nOptions?: (() => Promise<I18nOptions>) | I18nOptions
+}
+
+export interface ViteI18nSSGClientOptions extends ViteSSGClientOptions {
+  /**
+   * I18n options.
+   */
+  i18nOptions: (() => Promise<I18nOptions>) | I18nOptions
+}
+
+export type Crawling = {
+  // https://developers.google.com/search/docs/advanced/crawling/special-tags
+  noTranslate?: HeadAttrs
+  // localized versions of your page
+  // https://developers.google.com/search/docs/advanced/crawling/localized-versions
+  localizedVersions?: Record<string, HeadAttrs>
+  /**
+   * Extract head entries.
+   */
+  extractAlternateUrls?: () => HeadAttrs[]
+}
+
+export type LocaleInfo = {
+  current: Locale
+  firstDetection: boolean
+  locales: Record<Locale, ViteSSGLocale>
+}
+
+export { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n }
+
+// extend vue-router meta
+declare module 'vue-router' {
+  interface RouteMeta {
     /**
-     * Are the page messages registered globally?
+     * The key to localize the title and the description.
+     *
+     * The default value will be resolved from the `name` of the route or using the `path`.
+     *
+     * We suggest you using `route` from `vite-plugin-pages` on your page component:
+     * <pre>
+     * <route lang="yaml">
+     * meta:
+     *  pageI18nKey: 'PageA'
+     * </route>
+     * </pre>
+     *
+     * Beware on dynamic routes, we suggest you to include `pageI18nKey` using `route` from `vite-plugin-pages`.
+     *
+     * @default 'page-<route-name-or-route-path>'
+     */
+    pageI18nKey?: string
+    /**
+     * Key for title page translation.
+     *
+     * @default '${pageI18nKey}.title'
+     */
+    titleKey?: string
+    /**
+     * Key for title page translation.
+     *
+     * @default '${pageI18nKey}.description'
+     */
+    descriptionKey?: string
+    /**
+     * Key for `og:image`.
+     *
+     * @default '${pageI18nKey}.image'
+     */
+    imageKey?: string
+    /**
+     * Are page messages registered globally?
      *
      * Beware using `isGlobal: false`, since you will need to
      * register the title and the description from the page component
      * from `onMounted` hook.
      *
-     * For example, you can have all your components pages with:
-     *
-     * <pre>
-     * <i18n...>
-     * </pre>
-     *
-     * or
-     *
-     * <pre>
-     * <i18n global...>
-     * </pre>
-     *
-     * We need to know if those pages resources are registered globally or locally.
-     *
-     * If you have the page resources registered lccally you will need to use:
-     *
-     * <pre>
-     * setup() {
-     *     const { t } = useI18n()
-     * }
-     * </pre>
-     *
-     * and then
-     *
-     * <pre>
-     * <p>{{ t('page-b.someresource') }}</p>
-     * </pre>
-     *
-     * while registering globally you will need:
-     *
-     * <pre>
-     * setup() {
-     *     const { t } = useI18n({ useScope: 'global' })
-     * }
-     * </pre>
-     *
+     * @default true
      */
-    isGlobal: boolean
+    isGlobal?: boolean
     /**
-     * Page messages info.
+     * The locale for the route.
      */
+    locale?: ViteSSGLocale
     /**
-     * The prefix for the routes.
+     * Inject the following objects to `HeadObject`.
      *
-     * This prefix is for the entry on your `resource` file:
-     * ```json
-     * "en": {
-     *   "page-a": {
-     *     "title": "Page A title",
-     *     "description": "Page A description",
-     *     ...<other page resources>
-     *   }
-     * }
-     * "es": {
-     *   "page-a": {
-     *     "title": "Título de la página A",
-     *     "description": "Descripción de página A",
-     *     ...<other page resources>
-     *   }
-     * }
-     * @default 'page-'.
+     * 1) `lang` attribute for `html` element:
+     * ```html
+     * <html lang="en">
+     * ```
+     * 2) `title` head element from `route.meta.title` or looking for it from the `i18n` composer:
+     * ```html
+     * <title><TITLE></title>
+     * ```
+     * 3) `description` meta head from `route.meta.description` or looking for it from the `i18n` composer:
+     * ```html
+     * <meta name="description" content="<DESCRIPTION>">
+     * ```
+     * 4) Meta tag for `og:locale` for the current locale:
+     * ```html
+     * <meta property="og:locale" content="en">
+     * ```
+     * 5) Meta tag to avoid browser showing page translation popup:
+     * ```html
+     * <meta name="google" content="notranslate">
+     * ```
+     * 6) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
+     * ```html
+     * <link rel="alternate" hreflang="x-default" href="http://localhost:3000/route">
+     * <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">
+     * ```
+     *
+     * @param head The head object
+     * @param locale The current locale
      */
-    prefix?: string
+    // @ts-ignore ignore when vue is not installed
+    injectI18nMeta?: (
+      head: HeadObject,
+      locale: ViteSSGLocale,
+      i18nComposer: Composer<Record<string, any>, unknown, unknown>,
+      title?: string,
+      description?: string,
+      image?: string,
+    ) => HeadObject
+    /**
+     * Inject the following objects to `HeadObject` on `SSG`.
+     *
+     * The rest of data is configured by `injectI18nMeta`.
+     *
+     * 1) `title` head element from `route.meta.title` or looking for it from the global `$t` function:
+     * ```html
+     * <title>TITLE</title>
+     * ```
+     * 2) `description` meta head from `route.meta.description` or looking for it from global `$t` function:
+     * ```html
+     * <meta name="description" content="<DESCRIPTION>">
+     * ```
+     */
+    injectI18nSSGData?: (
+      head: HeadObject,
+      locale: ViteSSGLocale,
+      translate: (key: string, locale?: string, params?: any) => string | undefined,
+      title?: string,
+      description?: string,
+      image?: string
+    ) => HeadObject
+    /**
+     * Meta tags for alternative URLs.
+     */
+    // @ts-ignore ignore when vue is not installed
+    crawling?: Crawling
   }
 }

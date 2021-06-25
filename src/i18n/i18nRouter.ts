@@ -6,9 +6,13 @@ import {
   RouteRecordRaw,
   RouterView,
 } from 'vue-router'
-import { defineComponent, h, nextTick, Ref, ref } from 'vue'
-import { HeadObject, HeadObjectPlain } from '@vueuse/head'
-import { CreateVueI18n, HeadConfigurer, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
+import { App, defineComponent, h, nextTick, Ref, ref } from 'vue'
+import { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
+import { deserializeState, serializeState } from '../utils/state'
+import {
+  LocaleInfo,
+  ViteI18nSSGContext,
+} from './types'
 import { prepareHead } from './crawling'
 import { provideDefaultLocale, provideHeadObject, provideLocales } from './composables'
 import {
@@ -19,74 +23,21 @@ import {
   configureRouteEntryServer,
   normalizeLocalePathVariable,
 } from './utils'
-import type { ViteSSGContext } from '../types'
 import type { Router } from 'vue-router'
-import type { I18nConfigurationOptions, RouterConfiguration } from '../utils/types'
+import type { RouterConfiguration } from '../utils/types'
 
-function createI18nFactory(
-  locale: string,
-  defaultLocale: string,
-  localesMap: Map<string, ViteSSGLocale>,
-  isGlobal: boolean,
-  initialized: (
-    context: ViteSSGContext<true>,
-    i18n: I18n<Record<string, any>, unknown, unknown, false>,
-    globalMessages: Record<string, any> | undefined,
-    routeMessageResolver?: I18nRouteMessageResolver,
-    headConfigurer?: HeadConfigurer,
-  ) => Promise<void>,
-): CreateVueI18n {
-  return async(
-    context: ViteSSGContext<true>,
-    globalI18nMessageResolver,
-    routeMessageResolver,
-    headConfigurer?: HeadConfigurer,
-  ) => {
-    const availableLocales = Array.from(localesMap.values())
-
-    let messages: Record<string, any> | undefined
-
-    if (typeof globalI18nMessageResolver === 'function')
-      messages = await globalI18nMessageResolver()
-    else if (globalI18nMessageResolver)
-      messages = globalI18nMessageResolver
-
-    // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
-    // todo@userquin: review also globalInjection argument
-    const i18n = createI18n({
-      legacy: false,
-      globalInjection: true,
-      fallbackLocale: defaultLocale,
-      availableLocales: availableLocales.map(l => l.locale),
-      messages: messages || {},
-      locale,
-    })
-
-    await initialized(
-      context,
-      i18n,
-      messages,
-      routeMessageResolver,
-      headConfigurer,
-    )
-
-    return i18n
-  }
-}
-
-export function createI18nRouter(
+async function createI18nRouter(
+  app: App,
+  head: HeadClient,
   configuration: RouterConfiguration,
-  i18nOptions: I18nConfigurationOptions,
-  fn?: (context: ViteSSGContext<true>) => Promise<void> | void,
-): {
+  fn?: (context: ViteI18nSSGContext) => Promise<void> | void,
+  transformState?: (state: any) => any,
+): Promise<{
     router: Router
-    routes: RouteRecordRaw[]
-    localeInfo?: LocaleInfo
+    context: ViteI18nSSGContext
     requiresMapDefaultLocale?: boolean
-    createVueI18n?: CreateVueI18n
-    fn?: (context: ViteSSGContext<true>) => Promise<void> | void
-  } {
-  const { client, isClient, routerOptions, requestHeaders } = configuration
+  }> {
+  const { client, isClient, routerOptions, i18n: i18nConfiguration, i18nOptions, requestHeaders } = configuration
 
   let localeInfo: LocaleInfo
   // eslint-disable-next-line prefer-const
@@ -98,9 +49,7 @@ export function createI18nRouter(
     defaultLocaleOnUrl,
     localePathVariable,
     cookieName,
-    prefix,
-    isGlobal,
-  } = i18nOptions
+  } = i18nConfiguration
 
   let base: string | undefined
   if (client && isClient) {
@@ -115,7 +64,7 @@ export function createI18nRouter(
       base += `/${baseRef}`
   }
   else {
-    base = i18nOptions.base
+    base = i18nConfiguration.base
 
     localeInfo = detectServerLocale(
       defaultLocale,
@@ -135,7 +84,7 @@ export function createI18nRouter(
     const pageI18nKey = r.meta.pageI18nKey
     if (!pageI18nKey) {
       const routeName = r.name?.toString() || r.path
-      r.meta.pageI18nKey = `${prefix}${routeName}`
+      r.meta.pageI18nKey = `/${routeName}`
     }
 
     if (!r.meta.titleKey)
@@ -171,6 +120,34 @@ export function createI18nRouter(
     return r.path.startsWith(':') || r.path.includes('*')
   })
 
+  const availableLocales = Array.from(localesMap.values())
+
+  let messages: Record<string, any> | undefined
+
+  const {
+    globalMessages,
+    defaultLocale: locale,
+    routeMessages,
+    headConfigurer,
+    ssgHeadConfigurer,
+  } = i18nOptions
+
+  if (typeof globalMessages === 'function')
+    messages = await globalMessages()
+  else if (globalMessages)
+    messages = globalMessages
+
+  // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
+  // todo@userquin: review also globalInjection argument
+  const i18n = createI18n({
+    legacy: false,
+    globalInjection: true,
+    fallbackLocale: defaultLocale,
+    availableLocales: availableLocales.map(l => l.locale),
+    messages: messages || {},
+    locale,
+  })
+
   // create the router
   const router = createRouter({
     history: client
@@ -180,104 +157,147 @@ export function createI18nRouter(
     routes: localeRoutes,
   })
 
-  // prepare i18n callback
-  const createVueI18n = createI18nFactory(
-    localeInfo?.current || defaultLocale,
-    defaultLocale,
-    localesMap,
-    isGlobal,
-    async(
-      context,
+  const localeRef = i18n.global.locale
+  const localesArray = Object.values(localeInfo.locales)
+  const headObject = ref<HeadObject>({}) as Ref<HeadObjectPlain>
+
+  // prepare head for each route
+  children.forEach((r) => {
+    prepareHead(router, routerOptions, r, defaultLocale, localesArray, localeRef, base)
+  })
+
+  // build the default locale info
+  const defaultViteSSGLocale = {
+    ...localesMap.get(defaultLocale)!,
+    path: requiresMapDefaultLocale ? defaultLocale : '',
+    localePathVariable: normalizedLocalePathVariable,
+  }
+
+  // provide some helpers
+  provideLocales(app, Array.from(localesMap.values()))
+  provideHeadObject(app, headObject)
+  provideDefaultLocale(app, defaultViteSSGLocale)
+
+  // warn the user if we need to change path for default locale
+  if (requiresMapDefaultLocale && !defaultLocaleOnUrl) {
+    console.warn('vite-ssg:routes: you have at least a top route that is dynamic, the default locale will be shown on the url')
+    console.warn(`vite-ssg:routes: ☝ the default locale should be /, with your routes, we need to change to /${defaultLocale}/`)
+  }
+
+  // register the head object
+  head!.addHeadObjs(headObject)
+
+  app.use(i18n)
+  app.use(router)
+
+  const context = await initializeState(
+    app,
+    head,
+    isClient,
+    client,
+    router,
+    localeRoutes,
+    requiresMapDefaultLocale,
+    i18n,
+    fn,
+    transformState,
+  )
+
+  // we only need handle the route logic on the client side
+  if (client && isClient) {
+    configureClientNavigationGuards(
+      router,
+      head!,
+      headObject,
+      localeInfo,
+      defaultViteSSGLocale,
+      localesMap,
+      localeRef,
+      cookieName,
+      routerOptions.base || '/',
       i18n,
       globalMessages,
-      routeMessageResolver,
-      headConfigurer?: HeadConfigurer,
-    ) => {
-      const localeRef = i18n.global.locale
-      const localesArray = Object.values(localeInfo.locales)
-      const headObject = ref<HeadObject>({}) as Ref<HeadObjectPlain>
+      localeInfo.firstDetection,
+      routeMessages,
+      headConfigurer,
+    )
+  }
+  else {
+    localeRef.value = localeInfo.current
 
-      const { app, head } = context
+    await nextTick()
 
-      // prepare head for each route
-      children.forEach((r) => {
-        prepareHead(router, routerOptions, r, defaultLocale, localesArray, localeRef, base)
-      })
-
-      // build the default locale info
-      const defaultViteSSGLocale = {
-        ...localesMap.get(defaultLocale)!,
-        path: requiresMapDefaultLocale ? defaultLocale : '',
-        localePathVariable: normalizedLocalePathVariable,
-      }
-
-      // provide some helpers
-      provideLocales(app, Array.from(localesMap.values()))
-      provideHeadObject(app, headObject)
-      provideDefaultLocale(app, defaultViteSSGLocale)
-
-      // warn the user if we need to change path for default locale
-      if (requiresMapDefaultLocale && !defaultLocaleOnUrl) {
-        console.warn('vite-ssg:routes: you have at least a top route that is dynamic, the default locale will be shown on the url')
-        console.warn(`vite-ssg:routes: ☝ the default locale should be /, with your routes, we need to change to /${defaultLocale}/`)
-      }
-
-      // register the head object
-      head!.addHeadObjs(headObject)
-
-      app.use(i18n)
-      app.use(router)
-
-      // we only need handle the route logic on the client side
-      if (client && isClient) {
-        configureClientNavigationGuards(
-          router,
-          head!,
-          headObject,
-          localeInfo,
-          defaultViteSSGLocale,
-          localesMap,
-          localeRef,
-          cookieName,
-          routerOptions.base || '/',
-          i18n,
-          globalMessages,
-          localeInfo.firstDetection,
-          routeMessageResolver,
-          headConfigurer,
-        )
-      }
-      else {
-        localeRef.value = localeInfo.current
-
-        await nextTick()
-
-        await configureRouteEntryServer(
-          requestHeaders?.requestUrl || routerOptions.base || '/',
-          router,
-          context,
-          headObject,
-          defaultViteSSGLocale,
-          localesMap,
-          localeRef,
-          i18n,
-          globalMessages,
-          routeMessageResolver,
-          headConfigurer,
-        )
-      }
-    },
-  )
-  // we need to provide a hook to initialize if the user omit it
-  // by default wrap it: we need to await initialization
-  const useFn: ((context: ViteSSGContext<true>) => Promise<void> | void) = async(context) => {
-    if (fn)
-      await fn(context)
-
-    else
-      await createVueI18n(context)
+    await configureRouteEntryServer(
+      requestHeaders?.requestUrl || routerOptions.base || '/',
+      router,
+      context,
+      headObject,
+      defaultViteSSGLocale,
+      localesMap,
+      localeRef,
+      i18n,
+      globalMessages,
+      routeMessages,
+      headConfigurer,
+      ssgHeadConfigurer,
+    )
   }
 
   // return i18n stuff
-  return { router, routes: localeRoutes, localeInfo, requiresMapDefaultLocale, createVueI18n, fn: useFn }
+  return { router, context, requiresMapDefaultLocale }
+}
+
+async function initializeState(
+  app: App,
+  head: HeadClient,
+  isClient: boolean,
+  client: boolean,
+  router: Router,
+  routes: RouteRecordRaw[],
+  requiresMapDefaultLocale: boolean,
+  i18n: I18n<Record<string, any>, unknown, unknown, false>,
+  fn?: (context: ViteI18nSSGContext) => Promise<void> | void,
+  transformState?: (state: any) => any,
+): Promise<ViteI18nSSGContext> {
+  const context: ViteI18nSSGContext = { app, head, isClient, router, routes, requiresMapDefaultLocale, i18n, initialState: {} }
+
+  if (client)
+  // @ts-ignore
+    context.initialState = transformState?.(window.__INITIAL_STATE__ || {}) || deserializeState(window.__INITIAL_STATE__)
+
+  await fn?.(context)
+
+  return context
+}
+
+export async function initViteI18nSSGContext(
+  app: App,
+  head: HeadClient,
+  configuration: RouterConfiguration,
+  fn?: (context: ViteI18nSSGContext) => Promise<void> | void,
+  transformState?: (state: any) => any,
+): Promise<ViteI18nSSGContext> {
+  const { client, i18n } = configuration
+
+  const { router, context, requiresMapDefaultLocale } = await createI18nRouter(app, head, configuration, fn, transformState)
+
+  if (!client) {
+    if (i18n && configuration.requestHeaders?.requestUrl)
+      await router.push({ path: configuration.requestHeaders.requestUrl })
+
+    else
+      await router.push(configuration.routerOptions.base || '/')
+
+    await router.isReady()
+    context.initialState = router.currentRoute.value.meta.state as Record<string, any> || {}
+  }
+
+  // serialize initial state for SSR app for it to be interpolated to output HTML
+  const initialState = transformState?.(context.initialState) || serializeState(context.initialState)
+
+  return {
+    ...context,
+    initialState,
+    requiresMapDefaultLocale,
+  }
 }

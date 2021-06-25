@@ -11,6 +11,7 @@ export const I18nRouterLink = defineComponent({
     const { locale } = useGlobalI18n()
     return () => {
       return h(RouterLink, {
+        ...attrs,
         to: resolveNewRawLocationRoute(router, attrs.to as RouteLocationRaw, defaultLocale, locale.value),
       }, slots)
     }

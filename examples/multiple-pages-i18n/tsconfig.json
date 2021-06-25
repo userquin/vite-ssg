@@ -4,7 +4,8 @@
     "types": [
       "vite/client",
       "vite-plugin-pages/client",
-      "vite-ssg"
+      "vite-ssg",
+      "vite-ssg/i18n"
     ]
   }
 }

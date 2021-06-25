@@ -1,12 +1,10 @@
 import { createSSRApp, Component, createApp as createClientApp } from 'vue'
-import { createHead } from '@vueuse/head'
-import { initializeI18n } from '../i18n/utils'
-import { initViteSSGContext } from '../utils/context'
+import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
+import { createHead, HeadClient } from '@vueuse/head'
+import { deserializeState, serializeState } from '../utils/state'
+import { configureRouterBeforeEachEntryServer } from '../utils/utils'
 import { ClientOnly } from './components/ClientOnly'
-import { I18nRouterLink } from './components/I18nRouterLink'
-import type { RouterConfiguration } from '../utils/types'
-import type { HeadClient } from '@vueuse/head'
-import type { ViteSSGContext, ViteSSGClientOptions, RouterOptions } from '../types'
+import type { RouterOptions, ViteSSGContext, ViteSSGClientOptions } from '../types'
 
 export * from '../types'
 
@@ -21,54 +19,59 @@ export function ViteSSG(
     registerComponents = true,
     useHead = true,
     rootContainer = '#app',
-    i18nOptions,
   } = options
-
   const isClient = typeof window !== 'undefined'
 
-  async function createApp(
-    client = false,
-    base?: string,
-    requestHeaders?: {
-      acceptLanguage?: string
-      requestUrl?: string
-      localeCookie?: string
-    },
-  ) {
-    const i18nInfo = initializeI18n(base, i18nOptions)
-
+  async function createApp(client = false) {
     const app = client
       ? createClientApp(App)
       : createSSRApp(App)
 
     let head: HeadClient | undefined
 
-    if (useHead || i18nOptions) {
+    if (useHead) {
       head = createHead()
       app.use(head)
     }
 
-    if (registerComponents) {
+    const router = createRouter({
+      history: client
+        ? createWebHistory(routerOptions.base)
+        : createMemoryHistory(routerOptions.base),
+      ...routerOptions,
+    })
+
+    const { routes } = routerOptions
+
+    app.use(router)
+
+    if (registerComponents)
       app.component('ClientOnly', client ? ClientOnly : { render: () => null })
-      if (i18nInfo)
-        app.component('I18nRouterLink', I18nRouterLink)
+
+    const context: ViteSSGContext<true> = { app, head, isClient, router, routes, initialState: {} }
+
+    if (client)
+      // @ts-ignore
+      context.initialState = transformState?.(window.__INITIAL_STATE__ || {}) || deserializeState(window.__INITIAL_STATE__)
+
+    await fn?.(context)
+
+    configureRouterBeforeEachEntryServer(router, context)
+
+    if (!client) {
+      router.push(routerOptions.base || '/')
+
+      await router.isReady()
+      context.initialState = router.currentRoute.value.meta.state as Record<string, any> || {}
     }
 
-    const configuration: RouterConfiguration = { client, isClient, routerOptions }
+    // serialize initial state for SSR app for it to be interpolated to output HTML
+    const initialState = transformState?.(context.initialState) || serializeState(context.initialState)
 
-    if (!client && requestHeaders)
-      configuration.requestHeaders = requestHeaders
-
-    if (i18nInfo.info)
-      configuration.i18n = i18nInfo.info
-
-    return await initViteSSGContext(
-      app,
-      head,
-      configuration,
-      fn,
-      transformState,
-    )
+    return {
+      ...context,
+      initialState,
+    } as ViteSSGContext<true>
   }
 
   if (isClient) {

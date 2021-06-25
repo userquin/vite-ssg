@@ -11,6 +11,10 @@
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     },
+    "./i18n": {
+      "require": "./dist/client/i18n.js",
+      "import": "./dist/client/i18n.mjs"
+    },
     "./single-page": {
       "require": "./dist/client/single-page.js",
       "import": "./dist/client/single-page.mjs"
@@ -31,6 +35,7 @@
   "files": [
     "dist",
     "bin",
+    "i18n.d.ts",
     "single-page.d.ts"
   ],
   "bin": {
@@ -45,7 +50,7 @@
   "scripts": {
     "dev": "npm run build -- --watch",
     "copy-readme-files": "esno scripts/copy-readme-files.ts",
-    "copy-single-page-dts": "esno scripts/copy-single-page-dts.ts",
+    "copy-dts": "esno scripts/copy-dts.ts",
     "example:dev": "npm run copy-readme-files && npm -C examples/multiple-pages run dev",
     "example:build": "npm run copy-readme-files && npm -C examples/multiple-pages run build",
     "example:serve": "npm run copy-readme-files && npm -C examples/multiple-pages run serve",
@@ -59,7 +64,7 @@
     "example:i18n:build": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run build",
     "example:i18n:serve": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run serve",
     "example:i18n:build-serve": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run build-serve",
-    "build": "rimraf dist && tsup src/index.ts src/client/single-page.ts src/node/cli.ts --dts --format cjs,esm && npm run copy-single-page-dts",
+    "build": "rimraf dist && tsup src/index.ts src/client/i18n.ts src/client/single-page.ts src/node/cli.ts --dts --format cjs,esm && npm run copy-dts",
     "prepublishOnly": "npm run build",
     "release": "npx git-ensure -a && npx bumpp --push --tag --commit"
   },

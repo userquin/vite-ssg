@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAvailableLocales } from 'vite-ssg'
+import { useAvailableLocales } from 'vite-ssg/i18n'
 
 const { availableLocales, route } = useAvailableLocales()
 

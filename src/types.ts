@@ -1,10 +1,6 @@
-import { App, Ref } from 'vue'
+import { App } from 'vue'
 import { Router, RouteRecordRaw, RouterOptions as VueRouterOptions } from 'vue-router'
-import { HeadClient, HeadObject } from '@vueuse/head'
-// @ts-ignore ignore when vue is not installed
-import { Composer } from 'vue-i18n'
-import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
-import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n } from './i18n/composables'
+import { HeadClient } from '@vueuse/head'
 
 export interface ViteSSGOptions {
   /**
@@ -58,12 +54,6 @@ export interface ViteSSGOptions {
   onPageRendered?: (route: string, renderedHTML: string) => Promise<string | null | undefined> | string | null | undefined
 
   onFinished?: () => void
-
-  /**
-   * `vue-i18n@next` entry: read the docs for multi-page, you will need to change your `index.html` template.
-   */
-  i18nOptions?: () => Promise<I18nOptions> | I18nOptions
-
 }
 
 type PartialKeys<T, Keys extends keyof T> = Omit<T, Keys> & Partial<Pick<T, Keys>>
@@ -75,10 +65,6 @@ export interface ViteSSGContext<HasRouter extends boolean = true> {
   initialState: Record<string, any>
   head: HeadClient | undefined
   isClient: boolean
-  // @ts-ignore
-  requiresMapDefaultLocale?: boolean
-  createI18n?: CreateVueI18n
-  injectI18nSSG?: () => Promise<void>
 }
 
 export interface ViteSSGClientOptions {
@@ -86,141 +72,9 @@ export interface ViteSSGClientOptions {
   registerComponents?: boolean
   useHead?: boolean
   rootContainer?: string | Element
-  /**
-   * `vue-i18n@next` entry: read the docs for multi-page, since you will need to change your `index.html` template.
-   *
-   * Including this entry will force `useHead` to `true`.
-   */
-  i18nOptions?: I18nOptions
 }
 
 export type RouterOptions = PartialKeys<VueRouterOptions, 'history'> & { base?: string }
-
-export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n }
-
-// extend vue-router meta
-declare module 'vue-router' {
-  interface RouteMeta {
-    /**
-     * The key to localize the title and the description.
-     *
-     * The default value will be resolved from the `name` of the route or using the `path`.
-     *
-     * We suggest you using `route` from `vite-plugin-pages` on your page component:
-     * <pre>
-     * <route lang="yaml">
-     * meta:
-     *  pageI18nKey: 'PageA'
-     * </route>
-     * </pre>
-     *
-     * Beware on dynamic routes, we suggest you to include `pageI18nKey` using `route` from `vite-plugin-pages`.
-     *
-     * @default 'page-<route-name-or-route-path>'
-     */
-    pageI18nKey?: string
-    /**
-     * Key for title page translation.
-     *
-     * @default '${pageI18nKey}.title'
-     */
-    titleKey?: string
-    /**
-     * Key for title page translation.
-     *
-     * @default '${pageI18nKey}.description'
-     */
-    descriptionKey?: string
-    /**
-     * Key for `og:image`.
-     *
-     * @default '${pageI18nKey}.image'
-     */
-    imageKey?: string
-    /**
-     * Are page messages registered globally?
-     *
-     * Beware using `isGlobal: false`, since you will need to
-     * register the title and the description from the page component
-     * from `onMounted` hook.
-     *
-     * @default true
-     */
-    isGlobal?: boolean
-    /**
-     * The locale for the route.
-     */
-    locale?: ViteSSGLocale
-    /**
-     * Inject the following objects to `HeadObject`.
-     *
-     * 1) `lang` attribute for `html` element:
-     * ```html
-     * <html lang="en">
-     * ```
-     * 2) `title` head element from `route.meta.title` or looking for it from the composer:
-     * ```html
-     * <title>TITLE</title>
-     * ```
-     * 3) `description` meta head from `route.meta.description` or looking for it from the composer:
-     * ```html
-     * <meta name="description" content="<DESCRIPTION>">
-     * ```
-     * 4) Meta tag for `og:locale` for the current locale:
-     * ```html
-     * <meta property="og:locale" content="en">
-     * ```
-     * 5) Meta tag to avoid browser showing page translation popup:
-     * ```html
-     * <meta name="google" content="notranslate">
-     * ```
-     * 6) `link`s for alternate urls for each locale, for example ( `en` is the default locale ):
-     * ```html
-     * <link rel="alternate" hreflang="x-default" href="http://localhost:3000/route">
-     * <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">
-     * ```
-     *
-     * @param head The head object
-     * @param locale The current locale
-     */
-    // @ts-ignore ignore when vue is not installed
-    injectI18nMeta?: (
-      head: HeadObject,
-      locale: ViteSSGLocale,
-      i18nComposer: Composer<Record<string, any>, unknown, unknown>,
-      title?: string,
-      description?: string,
-      image?: string,
-    ) => HeadObject
-    /**
-     * Inject the following objects to `HeadObject` on `SSG`.
-     *
-     * The rest of data is configured by `injectI18nMeta`.
-     *
-     * 1) `title` head element from `route.meta.title` or looking for it from the composer:
-     * ```html
-     * <title>TITLE</title>
-     * ```
-     * 2) `description` meta head from `route.meta.description` or looking for it from the composer:
-     * ```html
-     * <meta name="description" content="<DESCRIPTION>">
-     * ```
-     */
-    injectI18nSSGData?: (
-      head: HeadObject,
-      locale: ViteSSGLocale,
-      translate: (key: string, locale?: string, params?: any) => string | undefined,
-      title?: string,
-      description?: string,
-      image?: string
-    ) => HeadObject
-    /**
-     * Meta tags for alternative URLs.
-     */
-    // @ts-ignore ignore when vue is not installed
-    crawling?: Crawling
-  }
-}
 
 // extend vite.config.ts
 declare module 'vite' {

@@ -3,10 +3,10 @@ import { isRef, WritableComputedRef } from '@vue/reactivity'
 import { nextTick } from 'vue'
 import { ViteSSGContext } from '../types'
 import { configureRouterBeforeEachEntryServer } from '../utils/utils'
-import { DefaultViteSSGLocale, HeadConfigurer, SSGHeadConfigurer } from './types'
+import { DefaultViteSSGLocale, I18nHeadConfigurer, I18nSSGHeadConfigurer, ViteI18nSSGContext } from './types'
 import type { Ref } from 'vue'
 import type { I18nConfigurationOptions } from '../utils/types'
-import type { I18nOptions, I18nRouteMessageResolver, LocaleInfo, ViteSSGLocale } from './types'
+import type { I18nOptions, I18nRouteMessages, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
 import type { HeadClient, HeadObject } from '@vueuse/head'
 
@@ -89,28 +89,15 @@ export function createLocalePathRoute(localePathVariable?: string): string {
   return `/:${normalizeLocalePathVariable(localePathVariable)}?`
 }
 
-export function initializeI18n(base?: string, i18nOptions?: I18nOptions): {
-  enabled: boolean
-  info?: I18nConfigurationOptions
-} {
-  if (i18nOptions) {
-    const localePathVariable = normalizeLocalePathVariable(i18nOptions.localePathVariable)
-    return {
-      enabled: true,
-      info: {
-        localesMap: createLocales(i18nOptions),
-        defaultLocale: i18nOptions.defaultLocale,
-        defaultLocaleOnUrl: i18nOptions.defaultLocaleOnUrl === true,
-        localePathVariable,
-        base,
-        prefix: i18nOptions.pageMessagesInfo?.prefix || 'page-',
-        isGlobal: i18nOptions.pageMessagesInfo?.isGlobal || true,
-        cookieName: i18nOptions.cookieName || 'VITE-SSG-LOCALE',
-      },
-    }
-  }
-  else {
-    return { enabled: false }
+export function initializeI18n(i18nOptions: I18nOptions, base?: string): I18nConfigurationOptions {
+  const localePathVariable = normalizeLocalePathVariable(i18nOptions.localePathVariable)
+  return {
+    localesMap: createLocales(i18nOptions),
+    defaultLocale: i18nOptions.defaultLocale,
+    defaultLocaleOnUrl: i18nOptions.defaultLocaleOnUrl === true,
+    localePathVariable,
+    base,
+    cookieName: i18nOptions.cookieName || 'VITE-SSG-LOCALE',
   }
 }
 
@@ -192,7 +179,7 @@ async function configureHead(
   headObject: Ref<HeadObject>,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   locale: ViteSSGLocale,
-  headConfigurer?: HeadConfigurer,
+  headConfigurer?: I18nHeadConfigurer,
 ) {
   let resolved = false
   if (headConfigurer) {
@@ -212,7 +199,7 @@ async function injectSSGHeadObject(
   headObject: Ref<HeadObject>,
   translate: (key: string, locale?: string, params?: any) => string | undefined,
   locale: ViteSSGLocale,
-  ssgHeadConfigurer?: SSGHeadConfigurer,
+  ssgHeadConfigurer?: I18nSSGHeadConfigurer,
 ) {
   let resolved = false
   if (ssgHeadConfigurer) {
@@ -233,14 +220,14 @@ async function loadPageMessages(
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   to: RouteLocationNormalized,
   globalMessages: Record<string, any> | undefined,
-  routeMessageResolver?: I18nRouteMessageResolver,
+  routeMessages?: I18nRouteMessages,
 ) {
   // load locale messages
   const localeCode = locale.locale
-  if (routeMessageResolver) {
+  if (routeMessages) {
     let messages: Record<string, Record<string, any>> | undefined
-    if (routeMessageResolver)
-      messages = await routeMessageResolver(locale, to)
+    if (routeMessages)
+      messages = await routeMessages(locale, to)
 
     if (messages && messages[localeCode]) {
       if (globalMessages && globalMessages[localeCode]) {
@@ -293,8 +280,8 @@ export function configureClientNavigationGuards(
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   globalMessages: Record<string, any> | undefined,
   requiresHandlingFirstRoute: boolean,
-  routeMessageResolver?: I18nRouteMessageResolver,
-  headConfigurer?: HeadConfigurer,
+  routeMessages?: I18nRouteMessages,
+  headConfigurer?: I18nHeadConfigurer,
 ) {
   const { path } = defaultLocale
   const requiredLocaleParam = path.length > 0
@@ -366,7 +353,7 @@ export function configureClientNavigationGuards(
       i18n,
       to,
       globalMessages,
-      routeMessageResolver,
+      routeMessages,
     )
 
     localeRef.value = locale.locale
@@ -394,16 +381,16 @@ export function configureClientNavigationGuards(
 export async function configureRouteEntryServer(
   route: string,
   router: Router,
-  context: ViteSSGContext<true>,
+  context: ViteI18nSSGContext,
   headObject: Ref<HeadObject>,
   defaultLocale: DefaultViteSSGLocale,
   localeMap: Map<string, ViteSSGLocale>,
   localeRef: WritableComputedRef<Locale>,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   globalMessages: Record<string, any> | undefined,
-  routeMessageResolver?: I18nRouteMessageResolver,
-  headConfigurer?: HeadConfigurer,
-  ssgHeadConfigurer?: SSGHeadConfigurer,
+  routeMessages?: I18nRouteMessages,
+  headConfigurer?: I18nHeadConfigurer,
+  ssgHeadConfigurer?: I18nSSGHeadConfigurer,
 ) {
   // configure router hooks
   configureRouterBeforeEachEntryServer(router, context)
@@ -418,7 +405,7 @@ export async function configureRouteEntryServer(
       i18n,
       to,
       globalMessages,
-      routeMessageResolver,
+      routeMessages,
     )
 
     await nextTick()
@@ -444,8 +431,8 @@ export async function configureRouteEntryServer(
         await injectSSGHeadObject(
           to,
           headObject,
-          (key) => {
-            return $t(key)
+          (key, locale?: string, params?: any) => {
+            return $t(key, locale, params)
           },
           localeMap.get(localeRef.value)!,
           ssgHeadConfigurer,
