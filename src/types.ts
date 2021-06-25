@@ -4,7 +4,7 @@ import { HeadClient, HeadObject } from '@vueuse/head'
 // @ts-ignore ignore when vue is not installed
 import { Composer } from 'vue-i18n'
 import { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n } from './i18n/types'
-import { useAvailableLocales, useI18nRouter, injectHeadObject } from './i18n/composables'
+import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n } from './i18n/composables'
 
 export interface ViteSSGOptions {
   /**
@@ -96,7 +96,7 @@ export interface ViteSSGClientOptions {
 
 export type RouterOptions = PartialKeys<VueRouterOptions, 'history'> & { base?: string }
 
-export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales, useI18nRouter, injectHeadObject }
+export { ViteSSGLocale, Crawling, I18nOptions, LocaleInfo, CreateVueI18n, useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n }
 
 // extend vue-router meta
 declare module 'vue-router' {

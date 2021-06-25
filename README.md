@@ -319,6 +319,8 @@ Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` 
   For example, instead using `router-view` passing the `locale` to the `:to` props,
   use `i18n-router-view` and forget the `locale` param.
 
+- `useGlobalI18n` function: will expose `useI18n({ useScope: 'global' }).
+  
 - `useAvailableLocales` function: will expose the locales you have configured, and so you can create a locale switcher.
   You can use in that case `router-view`, the `available locales` will include the `to` prop
   for the current route:
@@ -412,9 +414,9 @@ es:
     description: Descripción  de la página A
 </i18n>
 <script setup lang="ts">
-  import { useI18n } from 'vue-i18n'
+  import { useGlobalI18n } from 'vite-ssg'
   
-  import { t } = useI18n({ useScope: 'global' })
+  import { t } = useGlobalI18n()
 </script>
 <template>
   <h1>{{ t('PageA.title') }}</h1>
@@ -445,9 +447,9 @@ For example, you can use `yml/yaml` files (you can also use `json` or `json5`):
 // src/pages/page-a.vue
 <i18n global src="../../locales/pages/page-a.yml"></i18n>
 <script setup lang="ts">
-  import { useI18n } from 'vue-i18n'
-  
-  import { t } = useI18n({ useScope: 'global' })
+  import { useGlobalI18n } from 'vite-ssg'
+
+  import { t } = useGlobalI18n()
 </script>
 <template>
   <h1>{{ t('PageA.title') }}</h1>
@@ -493,9 +495,9 @@ meta:
 <i18n global src="../../locales/pages/page-a.yml"></i18n>
 
 <script setup lang="ts">
-  import { useI18n } from 'vue-i18n'
+  import { useGlobalI18n } from 'vite-ssg'
 
-  import { t } = useI18n({ useScope: 'global' })
+  import { t } = useGlobalI18n()
 </script>
 <template>
   <h1>{{ t('PageA.title') }}</h1>
@@ -651,7 +653,7 @@ If you want to migrate your existing application with `i18n` support, you need t
 1) update `vite-ssg` to the latest version 
 2) add `vue-i18n` to your dependencies: `npm install vue-i18n@next` or `yarn add vue-i18n@next`
 2) change all `useRouter()` to `useI18nRouter()`
-3) change all `useI18n()`, if you are using it, with `useI18n({ useScope: 'global' })`
+3) change all `useI18n()`, if you are using it, with `useGlobalI18n()`
 4) change all `<router-link>` to `<i18n-router-link>`: just keep all props, only change the component
 5) remove all `useHead` in all your pages: `vite-ssg` will handle changes for you
 6) if you need to configure `vue-i18n` global messages, you need to change:

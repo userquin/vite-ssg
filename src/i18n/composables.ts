@@ -39,9 +39,13 @@ export function injectHeadObject() {
   return inject<HeadObjectPlain>(headObjectKey)
 }
 
+export function useGlobalI18n() {
+  return useI18n({ useScope: 'global' })
+}
+
 export function useI18nRouter() {
   const router = useRouter()
-  const { locale } = useI18n({ useScope: 'global' })
+  const { locale } = useGlobalI18n()
   const defaultLocale = injectDefaultLocale()
   if (defaultLocale) {
     const i18nRouter: Router = {
