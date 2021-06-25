@@ -319,7 +319,7 @@ Since `vite-ssg` will handle `i18n` for you, you only need to use some `locale` 
   For example, instead using `router-view` passing the `locale` to the `:to` props,
   use `i18n-router-view` and forget the `locale` param.
 
-- `useGlobalI18n` function: will expose `useI18n({ useScope: 'global' }).
+- `useGlobalI18n` function: will expose `useI18n({ useScope: 'global' })`.
   
 - `useAvailableLocales` function: will expose the locales you have configured, and so you can create a locale switcher.
   You can use in that case `router-view`, the `available locales` will include the `to` prop

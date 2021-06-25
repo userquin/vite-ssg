@@ -21,8 +21,7 @@ es:
 </i18n>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18nRouter, useGlobalI18n } from 'vite-ssg'
 import { defineProps } from 'vue'
 
 const props = defineProps({
@@ -32,8 +31,8 @@ const props = defineProps({
   },
 })
 
-const router = useRouter()
-const { t } = useI18n()
+const router = useI18nRouter()
+const { t } = useGlobalI18n()
 </script>
 
 <template>

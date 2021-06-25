@@ -29,14 +29,13 @@
 </i18n>
 -->
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 import { defineProps, onMounted, ref } from 'vue'
-import { useI18nRouter } from 'vite-ssg'
+import { useI18nRouter, useGlobalI18n } from 'vite-ssg'
 
 const props = defineProps({ locale: String })
 
 const router = useI18nRouter()
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useGlobalI18n()
 
 const name = ref('')
 
