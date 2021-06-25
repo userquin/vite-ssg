@@ -736,7 +736,7 @@ If you want to migrate your existing application with `i18n` support, you need t
 6) if you need to configure `vue-i18n` global messages, you need to change:
 ```ts
 // src/main.ts
-import { ViteSSG } from 'vite-ssg/i18n'
+import { ViteSSG } from 'vite-ssg'
 
 export const createApp = ViteSSG(App, { routes })
 ```
