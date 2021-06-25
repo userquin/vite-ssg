@@ -535,7 +535,7 @@ see [Customizing head for each page](#customizing-head-for-each-page) below.
 **Note about SSG**: 
 
 Since the `i18n` composer will not be available outside the page component, you will need to provide `ssgHeadConfigurer` 
-callback on `createI18n` options if you have to include localized entries from your `page mesages resources`.
+callback on `createI18n` options if you have to include localized entries from your `page messages resources`.
 
 ### Advanced configuration
 
