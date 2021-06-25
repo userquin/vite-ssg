@@ -151,14 +151,14 @@ export function prepareHead(
 
       let useTitle = title
       if (!useTitle && titleKey) {
-        useTitle = translate(titleKey, locale.locale, params)
+        useTitle = translate(titleKey, params)
         if (useTitle && titleKey === useTitle)
           useTitle = undefined
       }
 
       let useDescription = description
       if (!useDescription && descriptionKey) {
-        useDescription = translate(descriptionKey, locale.locale, params)
+        useDescription = translate(descriptionKey, params)
         if (useDescription && descriptionKey === useDescription)
           useDescription = undefined
       }

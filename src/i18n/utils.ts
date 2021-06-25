@@ -216,7 +216,6 @@ async function injectSSGHeadObject(
 
 async function loadPageMessages(
   locale: ViteSSGLocale,
-  localeRef: WritableComputedRef<Locale>,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   to: RouteLocationNormalized,
   globalMessages: Record<string, any> | undefined,
@@ -349,7 +348,6 @@ export function configureClientNavigationGuards(
 
     await loadPageMessages(
       locale,
-      localeRef,
       i18n,
       to,
       globalMessages,
@@ -365,6 +363,8 @@ export function configureClientNavigationGuards(
     catch (e) {
       console.warn(`cannot configure cookie locale: ${name}`, e)
     }
+
+    await nextTick()
 
     await configureHead(
       to,
@@ -385,7 +385,7 @@ export async function configureRouteEntryServer(
   headObject: Ref<HeadObject>,
   defaultLocale: DefaultViteSSGLocale,
   localeMap: Map<string, ViteSSGLocale>,
-  localeRef: WritableComputedRef<Locale>,
+  locale: ViteSSGLocale,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   globalMessages: Record<string, any> | undefined,
   routeMessages?: I18nRouteMessages,
@@ -396,12 +396,10 @@ export async function configureRouteEntryServer(
   configureRouterBeforeEachEntryServer(router, context)
 
   router.afterEach(async(to) => {
-    const locale = localeMap.get(localeRef.value)!
     await nextTick()
 
     await loadPageMessages(
       locale,
-      localeRef,
       i18n,
       to,
       globalMessages,
@@ -431,10 +429,10 @@ export async function configureRouteEntryServer(
         await injectSSGHeadObject(
           to,
           headObject,
-          (key, locale?: string, params?: any) => {
-            return $t(key, locale, params)
+          (key, params) => {
+            return $t(key, params)
           },
-          localeMap.get(localeRef.value)!,
+          locale,
           ssgHeadConfigurer,
         )
       }

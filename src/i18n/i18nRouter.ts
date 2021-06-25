@@ -126,7 +126,6 @@ async function createI18nRouter(
 
   const {
     globalMessages,
-    defaultLocale: locale,
     routeMessages,
     headConfigurer,
     ssgHeadConfigurer,
@@ -145,7 +144,7 @@ async function createI18nRouter(
     fallbackLocale: defaultLocale,
     availableLocales: availableLocales.map(l => l.locale),
     messages: messages || {},
-    locale,
+    locale: localeInfo.current,
   })
 
   // create the router
@@ -190,6 +189,10 @@ async function createI18nRouter(
   app.use(i18n)
   app.use(router)
 
+  localeRef.value = localeInfo.current
+
+  await nextTick()
+
   const context = await initializeState(
     app,
     head,
@@ -223,10 +226,6 @@ async function createI18nRouter(
     )
   }
   else {
-    localeRef.value = localeInfo.current
-
-    await nextTick()
-
     await configureRouteEntryServer(
       requestHeaders?.requestUrl || routerOptions.base || '/',
       router,
@@ -234,7 +233,7 @@ async function createI18nRouter(
       headObject,
       defaultViteSSGLocale,
       localesMap,
-      localeRef,
+      localesMap.get(localeInfo.current)!,
       i18n,
       globalMessages,
       routeMessages,

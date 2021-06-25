@@ -14,7 +14,6 @@ const i18nOptions: I18nOptions = {
   defaultLocale,
   defaultLocaleOnUrl,
   globalMessages,
-  routeMessages: undefined,
   // async(locale, to) => {
   //   try {
   //     const messagesModule = await import(/* @vite-ignore */ `../pages/${to.meta.rawI18nPath}.json5`)

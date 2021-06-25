@@ -38,7 +38,7 @@ export type I18nHeadConfigurer = (
 export type I18nSSGHeadConfigurer = (
   route: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
-  translate: (key: string, locale?: string, params?: any) => string | undefined,
+  translate: (key: string, params?: any) => string | undefined,
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
@@ -107,7 +107,7 @@ export interface ViteI18nSSGOptions extends ViteSSGOptions {
   /**
    * I18n options.
    */
-  i18nOptions?: (() => Promise<I18nOptions>) | I18nOptions
+  i18nOptions: (() => Promise<I18nOptions>) | I18nOptions
 }
 
 export interface ViteI18nSSGClientOptions extends ViteSSGClientOptions {
@@ -248,7 +248,7 @@ declare module 'vue-router' {
     injectI18nSSGData?: (
       head: HeadObject,
       locale: ViteSSGLocale,
-      translate: (key: string, locale?: string, params?: any) => string | undefined,
+      translate: (key: string, params?: any) => string | undefined,
       title?: string,
       description?: string,
       image?: string
