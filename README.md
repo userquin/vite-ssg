@@ -423,7 +423,7 @@ es:
 
 #### Using external messages
 
-In your `SFC` you only need to add the `<i18n global src="<external localtion>">` component (you can see options [here](https://vue-i18n.intlify.dev/guide/advanced/sfc.html#basic-usage))
+In your `SFC` you only need to add the `<i18n global src="<external location relative to the page component>">` component (you can see options [here](https://vue-i18n.intlify.dev/guide/advanced/sfc.html#basic-usage))
 
 In order to use external messages to work, you will need to configure `@intlify/vite-plugin-vue-i18n` including
 the paths where it can find external resources you configure:
@@ -530,7 +530,7 @@ meta:
 ```
 
 You can also customize each head page, using `headConfigurer` callback on `createI18n` options, 
-see [Customizing head for each page](#### Customizing head for each page) below.
+see [Customizing head for each page](####customizing-head-for-each-page) below.
 
 **Note about SSG**: 
 
