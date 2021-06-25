@@ -82,6 +82,7 @@ export function createI18nRouter(
     router: Router
     routes: RouteRecordRaw[]
     localeInfo?: LocaleInfo
+    requiresMapDefaultLocale?: boolean
     createVueI18n?: CreateVueI18n
     fn?: (context: ViteSSGContext<true>) => Promise<void> | void
   } {
@@ -162,6 +163,11 @@ export function createI18nRouter(
     children,
   }]
 
+  // check for top dynamic routes
+  const requiresMapDefaultLocale = defaultLocaleOnUrl || children.some((r) => {
+    return r.path.startsWith(':') || r.path.includes('*')
+  })
+
   // create the router
   const router = createRouter({
     history: client
@@ -190,17 +196,15 @@ export function createI18nRouter(
 
       const { app, head } = context
 
-      // prepare head for each route and check for top dynamic routes
-      let hasDynamicRoutes = defaultLocaleOnUrl
+      // prepare head for each route
       children.forEach((r) => {
         prepareHead(router, routerOptions, r, defaultLocale, localesArray, localeRef, base)
-        hasDynamicRoutes = hasDynamicRoutes || r.path.startsWith(':') || r.path.includes('*')
       })
 
       // build the default locale info
       const defaultViteSSGLocale = {
         ...localesMap.get(defaultLocale)!,
-        path: hasDynamicRoutes ? defaultLocale : '',
+        path: requiresMapDefaultLocale ? defaultLocale : '',
         localePathVariable: normalizedLocalePathVariable,
       }
 
@@ -210,7 +214,7 @@ export function createI18nRouter(
       provideDefaultLocale(app, defaultViteSSGLocale)
 
       // warn the user if we need to change path for default locale
-      if (hasDynamicRoutes && !defaultLocaleOnUrl) {
+      if (requiresMapDefaultLocale && !defaultLocaleOnUrl) {
         console.warn('vite-ssg:routes: you have at least a top route that is dynamic, the default locale will be shown on the url')
         console.warn(`vite-ssg:routes: ☝ the default locale should be /, with your routes, we need to change to /${defaultLocale}/`)
       }
@@ -272,5 +276,5 @@ export function createI18nRouter(
   }
 
   // return i18n stuff
-  return { router, routes: localeRoutes, localeInfo, createVueI18n, fn: useFn }
+  return { router, routes: localeRoutes, localeInfo, requiresMapDefaultLocale, createVueI18n, fn: useFn }
 }

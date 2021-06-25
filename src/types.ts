@@ -76,6 +76,7 @@ export interface ViteSSGContext<HasRouter extends boolean = true> {
   head: HeadClient | undefined
   isClient: boolean
   // @ts-ignore
+  requiresMapDefaultLocale?: boolean
   createI18n?: CreateVueI18n
   injectI18nSSG?: () => Promise<void>
 }

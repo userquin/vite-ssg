@@ -15,6 +15,7 @@ function createViteSSGRouter(
     router: Router
     routes: RouteRecordRaw[]
     localeInfo?: LocaleInfo
+    requiresMapDefaultLocale?: boolean
     createVueI18n?: CreateVueI18n
     useFn?: (context: ViteSSGContext<true>) => Promise<void> | void
   } {
@@ -23,9 +24,10 @@ function createViteSSGRouter(
   let routes: RouteRecordRaw[] = routerOptions.routes
   let localeInfo: LocaleInfo | undefined
   let createVueI18n: CreateVueI18n | undefined
+  let requiresMapDefaultLocale: boolean | undefined
 
   if (i18n) {
-    ({ router, routes, fn, localeInfo, createVueI18n } = createI18nRouter(configuration, i18n, fn))
+    ({ router, routes, fn, localeInfo, createVueI18n, requiresMapDefaultLocale } = createI18nRouter(configuration, i18n, fn))
   }
   else {
     router = createRouter({
@@ -37,7 +39,7 @@ function createViteSSGRouter(
     app.use(router)
   }
 
-  return { router, routes, useFn: fn, localeInfo, createVueI18n }
+  return { router, routes, useFn: fn, localeInfo, requiresMapDefaultLocale, createVueI18n }
 }
 
 async function initializeState(
@@ -72,7 +74,7 @@ export async function initViteSSGContext(
 ): Promise<ViteSSGContext<true>> {
   const { client, i18n, isClient } = configuration
 
-  const { router, routes, useFn, localeInfo, createVueI18n } = await createViteSSGRouter(app, configuration, fn)
+  const { router, routes, useFn, localeInfo, requiresMapDefaultLocale, createVueI18n } = await createViteSSGRouter(app, configuration, fn)
 
   const context = await initializeState(
     app,
@@ -112,5 +114,6 @@ export async function initViteSSGContext(
   return {
     ...context,
     initialState,
+    requiresMapDefaultLocale,
   }
 }

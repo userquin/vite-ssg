@@ -95,7 +95,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
   const base = i18n?.base
 
-  const { routes, initialState } = await createApp(false, base)
+  const { routes, initialState, requiresMapDefaultLocale = false } = await createApp(false, base)
 
   let routesPaths: string[]
 
@@ -107,12 +107,24 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     if (localeRoute) {
       routesPaths = await includedRoutes(routesToPaths(localeRoute[0].children || []))
       const newRoutes: string[] = []
-      Object.keys(locales).filter(l => l !== defaultLocale).forEach((l) => {
-        routesPaths.forEach((path) => {
-          newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
+      // in case requiresMapDefaultLocale we also need to include all default routes inside the directory
+      if (requiresMapDefaultLocale) {
+        Object.keys(locales).forEach((l) => {
+          routesPaths.forEach((path) => {
+            newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
+          })
         })
-      })
-      routesPaths.push(...newRoutes)
+        routesPaths.splice(0, routesPaths.length, ...newRoutes)
+      }
+      else {
+        Object.keys(locales).filter(l => l !== defaultLocale).forEach((l) => {
+          routesPaths.forEach((path) => {
+            newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
+          })
+        })
+        routesPaths.push(...newRoutes)
+      }
+      console.log(routesPaths)
     }
   }
   else {
