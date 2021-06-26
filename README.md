@@ -560,11 +560,6 @@ is present:
 You can also customize each head page, using `headConfigurer` callback on `i18nOptions` option, 
 see [Customizing head for each page](#customizing-head-for-each-page) below.
 
-**Note about SSG**: 
-
-Since the `i18n` composer will not be available outside the page component, you will need to provide `ssgHeadConfigurer` 
-callback on `i18nOptions` option if you have to include localized entries from your `page messages resources`.
-
 ### Advanced configuration
 
 By default `vite-ssg/i18n` will do a lot for you, but you can customize your own behavior via callbacks using `i18nOptions` option.
