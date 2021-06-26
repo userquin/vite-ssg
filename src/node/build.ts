@@ -200,6 +200,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
       // render current page's preloadLinks
       renderPreloadLinks(jsdom.window.document, ctx.modules || new Set<string>(), ssrManifest)
 
+      // process i18n: keep it here
       await applyI18nSSG(ssgContext)
 
       // render head
