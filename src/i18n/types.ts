@@ -23,7 +23,7 @@ export type AvailableLocale = {
   to: RouteLocationRaw
 }
 
-export type I18nGlobalMessages = () => Promise<Record<string, any>> | Record<string, any>
+export type I18nGlobalMessages = (() => Promise<Record<string, any>>) | Record<string, any>
 
 export type I18nRouteMessages = (
   locale: ViteSSGLocale,
@@ -257,28 +257,6 @@ declare module 'vue-router' {
       title?: string,
       description?: string,
       image?: string,
-    ) => HeadObject
-    /**
-     * Inject the following objects to `HeadObject` on `SSG`.
-     *
-     * The rest of data is configured by `injectI18nMeta`.
-     *
-     * 1) `title` head element from `route.meta.title` or looking for it from the global `$t` function:
-     * ```html
-     * <title>TITLE</title>
-     * ```
-     * 2) `description` meta head from `route.meta.description` or looking for it from global `$t` function:
-     * ```html
-     * <meta name="description" content="<DESCRIPTION>">
-     * ```
-     */
-    injectI18nSSGData?: (
-      head: HeadObject,
-      locale: ViteSSGLocale,
-      translate: (key: string, params?: unknown[] | Record<string, unknown>) => TranslateResult | undefined,
-      title?: string,
-      description?: string,
-      image?: string
     ) => HeadObject
     /**
      * Meta tags for alternative URLs.

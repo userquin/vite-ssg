@@ -11,11 +11,11 @@ const pages = new Map<string, number>()
 const i18nAlternateBase = (process.env.I18N_BASE ? process.env.I18N_BASE : undefined)
 
 const config: UserConfig = {
-  // resolve: {
-  //   alias: {
-  //     'vue-i18n': 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js',
-  //   },
-  // },
+  resolve: {
+    alias: {
+      'vue-i18n': 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js',
+    },
+  },
   build: {
     manifest: !process.env.VITE_SSG,
   },

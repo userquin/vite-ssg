@@ -6,9 +6,10 @@ import { build as viteBuild, normalizePath, resolveConfig, UserConfig } from 'vi
 import { renderToString, SSRContext } from '@vue/server-renderer'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { RollupOutput } from 'rollup'
+import { nextTick } from 'vue'
 import { ViteSSGContext, ViteSSGOptions } from '../client'
 import { createLocalePathRoute } from '../i18n/utils'
-import { I18nSSGHeadConfigurer, ViteSSGLocale } from '../i18n/types'
+import { ViteSSGLocale } from '../i18n/types'
 import { renderPreloadLinks } from './preload-links'
 import { buildLog, routesToPaths, getSize } from './utils'
 
@@ -30,7 +31,7 @@ function extractI18nOptions(context: ViteSSGContext<true> | ViteSSGContext<false
   const i18nContext = context as any
   if (context.router && i18nContext.locales) {
     return {
-      defaultLocale: i18nContext.defaultLocaleOnUrl,
+      defaultLocale: i18nContext.defaultLocale,
       locales: i18nContext.locales,
       defaultLocaleOnUrl: i18nContext.defaultLocaleOnUrl as boolean,
       localePathVariable: i18nContext.localePathVariable as string,
@@ -42,8 +43,10 @@ function extractI18nOptions(context: ViteSSGContext<true> | ViteSSGContext<false
 async function applyI18nSSG(context: ViteSSGContext<true> | ViteSSGContext<false>) {
   if (context.router) {
     const i18nContext = context as any
-    if (i18nContext.injectI18nSSG)
+    if (i18nContext.injectI18nSSG) {
+      await nextTick()
       await i18nContext.injectI18nSSG()
+    }
   }
 }
 
@@ -131,6 +134,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     const localeRoute = routes!.filter(r => r.path === normalizedLocale)
     if (localeRoute) {
       routesPaths = await includedRoutes(routesToPaths(localeRoute[0].children || []))
+      console.log(routesPaths)
       const newRoutes: string[] = []
       // in case requiresMapDefaultLocale we also need to include all default routes inside the directory
       if (defaultLocaleOnUrl) {
@@ -189,8 +193,6 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
       const ctx: SSRContext = {}
       const appHTML = await renderToString(app, ctx)
 
-      await applyI18nSSG(ssgContext)
-
       // need to resolve assets so render content first
       const renderedHTML = renderHTML({ indexHTML: transformedIndexHTML, appHTML, initialState })
 
@@ -199,6 +201,8 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
       // render current page's preloadLinks
       renderPreloadLinks(jsdom.window.document, ctx.modules || new Set<string>(), ssrManifest)
+
+      await applyI18nSSG(ssgContext)
 
       // render head
       head?.updateDOM(jsdom.window.document)

@@ -132,48 +132,6 @@ export function prepareHead(
     return headers
   }
   if (route.meta) {
-    route.meta.injectI18nSSGData = (
-      head,
-      locale,
-      translate,
-      title,
-      description,
-      image,
-    ) => {
-      head.meta = head.meta || []
-      const metaArray = isRef(head.meta) ? head.meta.value : head.meta
-      const { titleKey, descriptionKey, imageKey } = route.meta || {}
-
-      let params: Record<string, any> = {}
-      const useRoute = router.currentRoute.value
-      if (useRoute && Object.keys(useRoute.params).length > 0)
-        params = useRoute.params
-
-      let useTitle = title
-      if (!useTitle && titleKey) {
-        useTitle = translate(titleKey, params)
-        if (useTitle && titleKey === useTitle)
-          useTitle = undefined
-      }
-
-      let useDescription = description
-      if (!useDescription && descriptionKey) {
-        useDescription = translate(descriptionKey, params)
-        if (useDescription && descriptionKey === useDescription)
-          useDescription = undefined
-      }
-
-      let useImage = image
-      if (!useImage && imageKey) {
-        useImage = translate(imageKey)
-        if (useImage && imageKey === useImage)
-          useImage = undefined
-      }
-
-      updateMetaHead(head, metaArray, useTitle, useDescription, useImage)
-
-      return head
-    }
     route.meta.injectI18nMeta = (
       head,
       locale,

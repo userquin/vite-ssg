@@ -5,7 +5,7 @@ import App from './App.vue'
 
 // import i18n resources
 // https://vitejs.dev/guide/features.html#glob-import
-const i18nMessages = Object.fromEntries(Object.entries(import.meta.globEager('../locales/*.yml'))
+const globalMessages: Record<string, any> = Object.fromEntries(Object.entries(import.meta.globEager('../locales/*.yml'))
   .map(([key, value]) => [key.slice(11, -4), value.default]),
 )
 
@@ -17,9 +17,7 @@ export const createApp = ViteSSG(
       locales,
       defaultLocale,
       defaultLocaleOnUrl,
-      globalMessages() {
-        return i18nMessages
-      },
+      globalMessages,
       // async(locale, to) => {
       //   try {
       //     const messagesModule = await import(/* @vite-ignore */ `../pages/${to.meta.rawI18nPath}.json5`)

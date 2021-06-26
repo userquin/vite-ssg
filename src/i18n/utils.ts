@@ -197,26 +197,6 @@ async function configureHead(
     to.meta.injectI18nMeta?.(headObject.value, locale, i18n.global)
 }
 
-async function injectSSGHeadObject(
-  to: RouteLocationNormalized,
-  headObject: Ref<HeadObject>,
-  translate: (key: string, params?: unknown[] | Record<any, unknown>) => string | undefined,
-  locale: ViteSSGLocale,
-  ssgHeadConfigurer?: I18nSSGHeadConfigurer,
-) {
-  let resolved = false
-  if (ssgHeadConfigurer) {
-    resolved = await ssgHeadConfigurer(
-      to,
-      headObject,
-      translate,
-      locale,
-    )
-  }
-  if (!resolved)
-    to.meta.injectI18nSSGData?.(headObject.value, locale, translate)
-}
-
 async function loadPageMessages(
   locale: ViteSSGLocale,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
@@ -225,8 +205,8 @@ async function loadPageMessages(
   routeMessages?: I18nRouteMessages,
 ) {
   // load locale messages
-  const localeCode = locale.locale
   if (routeMessages) {
+    const localeCode = locale.locale
     let messages: Record<string, Record<string, any>> | undefined
     if (routeMessages)
       messages = await routeMessages(locale, to)
@@ -386,6 +366,7 @@ export async function configureRouteEntryServer(
   router: Router,
   context: ViteI18nSSGContext,
   headObject: Ref<HeadObject>,
+  localeRef: WritableComputedRef<Locale>,
   defaultLocale: DefaultViteSSGLocale,
   localeMap: Map<string, ViteSSGLocale>,
   locale: ViteSSGLocale,
@@ -395,22 +376,10 @@ export async function configureRouteEntryServer(
   headConfigurer?: I18nHeadConfigurer,
   ssgHeadConfigurer?: I18nSSGHeadConfigurer,
 ) {
-  // configure router hooks
-  let entryRoutePath: string | undefined
-  let isFirstRoute = true
-  router.beforeEach((to, from, next) => {
-    if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
-      // The first route is rendered in the server and its state is provided globally.
-      isFirstRoute = false
-      entryRoutePath = to.path
-      to.meta.state = context.initialState
-    }
-
-    next()
-  })
-
   router.afterEach(async(to) => {
-    await nextTick()
+    const paramsLocale = to.params.locale as string
+
+    const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
 
     await loadPageMessages(
       locale,
@@ -419,6 +388,10 @@ export async function configureRouteEntryServer(
       globalMessages,
       routeMessages,
     )
+
+    await nextTick()
+
+    localeRef.value = locale.locale
 
     await nextTick()
 
@@ -432,24 +405,18 @@ export async function configureRouteEntryServer(
     )
   })
 
-  // on SSG since the setup method is not called we cannot access the i18n composer
-  // here we can add a callback to be used after server render to inject only title
-  // and description or whatever the user want to inject
+  // on SSG we need to do at the end: see node/build.ts
   if (process.env.VITE_SSG === 'true') {
     context.injectI18nSSG = async() => {
+      await nextTick()
       const to = router.currentRoute.value
-      const { $t } = context.app.config.globalProperties
-      if ($t && to.meta) {
-        await injectSSGHeadObject(
-          to,
-          headObject,
-          (key, params) => {
-            return $t(key, params)
-          },
-          locale,
-          ssgHeadConfigurer,
-        )
-      }
+      await configureHead(
+        to,
+        headObject,
+        i18n,
+        locale,
+        headConfigurer,
+      )
     }
   }
 }

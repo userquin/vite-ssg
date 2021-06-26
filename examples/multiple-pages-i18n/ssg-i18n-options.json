@@ -1,6 +1,6 @@
 {
   "defaultLocale": "en",
-  "defaultLocaleOnUrl": true,
+  "defaultLocaleOnUrl": false,
   "locales": {
     "en": "English",
     "es": "Español"

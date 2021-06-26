@@ -22,7 +22,7 @@ import {
   detectServerLocale,
   configureClientNavigationGuards,
   configureRouteEntryServer,
-  normalizeLocalePathVariable,
+  normalizeLocalePathVariable, resolveNewRouteLocationNormalized, resolveNewRawLocationRoute,
 } from './utils'
 import type { Router } from 'vue-router'
 import type { RouterConfiguration } from './types'
@@ -128,12 +128,17 @@ async function createI18nRouter(
     ssgHeadConfigurer,
   } = i18nOptions
 
-  const globalMessages = await i18nOptions.globalMessages?.()
+  let globalMessages: Record<string, any> | undefined
+  if (i18nOptions.globalMessages) {
+    if (typeof i18nOptions.globalMessages === 'function')
+      globalMessages = await i18nOptions.globalMessages?.()
+    else
+      globalMessages = i18nOptions.globalMessages
+  }
 
-  // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
-  // todo@userquin: review also globalInjection argument
   const i18n = createI18n({
     legacy: false,
+    global: true,
     globalInjection: false,
     fallbackLocale: defaultLocale,
     availableLocales: availableLocales.map(l => l.locale),
@@ -204,6 +209,20 @@ async function createI18nRouter(
     transformState,
   )
 
+  // configure router hooks
+  let entryRoutePath: string | undefined
+  let isFirstRoute = true
+  router.beforeEach((to, from, next) => {
+    if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
+      // The first route is rendered in the server and its state is provided globally.
+      isFirstRoute = false
+      entryRoutePath = to.path
+      to.meta.state = context.initialState
+    }
+
+    next()
+  })
+
   // we only need handle the route logic on the client side
   if (client && isClient) {
     configureClientNavigationGuards(
@@ -229,6 +248,7 @@ async function createI18nRouter(
       router,
       context,
       headObject,
+      localeRef,
       defaultViteSSGLocale,
       localesMap,
       localesMap.get(localeInfo.current)!,
@@ -289,16 +309,16 @@ export async function initViteI18nSSGContext(
   fn?: (context: ViteI18nSSGContext) => Promise<void> | void,
   transformState?: (state: any) => any,
 ): Promise<ViteI18nSSGContext> {
-  const { client, i18n } = configuration
+  const { client } = configuration
 
   const { router, context } = await createI18nRouter(app, head, configuration, fn, transformState)
 
   if (!client) {
-    if (i18n && configuration.requestHeaders?.requestUrl)
-      router.push({ path: configuration.requestHeaders.requestUrl })
+    if (configuration.requestHeaders?.requestUrl)
+      await router.push({ path: configuration.requestHeaders.requestUrl })
 
     else
-      router.push(configuration.routerOptions.base || '/')
+      await router.push(configuration.routerOptions.base || '/')
 
     await router.isReady()
     context.initialState = router.currentRoute.value.meta.state as Record<string, any> || {}
