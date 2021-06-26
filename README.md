@@ -707,49 +707,61 @@ If you want to migrate your existing application with `i18n` support, you need t
 
 1) update `vite-ssg` to the latest version 
 2) add `vue-i18n` to your dependencies: `npm install vue-i18n@next` or `yarn add vue-i18n@next`
-2) change all `useRouter()` to `useI18nRouter()`
-3) change all `useI18n()`, if you are using it, with `useGlobalI18n()`
+2) change all `useRouter()` to `useI18nRouter()`: `import {useI18nRouter} from 'vite-ssg/i18n'`
+3) change all `useI18n()`, if you are using it, with `useGlobalI18n()`: `import { useGlobalI18n } from 'vite-ssg/i18n'`
 4) change all `<router-link>` to `<i18n-router-link>`: just keep all props, only change the component
 5) remove all `useHead` in all your pages: `vite-ssg/i18n` will handle changes for you
-6) if you need to configure `vue-i18n` global messages, you need to change:
-```ts
-// src/main.ts
-import { ViteSSG } from 'vite-ssg'
+6) change the import of `ViteSSG` on your `main.ts`:
+  ```ts
+  // src/main.ts
+  import { ViteSSG } from 'vite-ssg'
 
-export const createApp = ViteSSG(App, { routes })
-```
-with
-```ts
-// src/main.ts
-import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
+  export const createApp = ViteSSG(App, { routes })
+  ```
+  with
+  ```ts
+  // src/main.ts
+  import { ViteSSG } from 'vite-ssg/i18n'
+  ```
+7) if you need to configure `vue-i18n` global messages, you need to change:
+  ```ts
+  // src/main.ts
+  import { ViteSSG } from 'vite-ssg'
 
-export const createApp = ViteSSG(
-  App, 
-  { routes },
-  {
-    // other options
-    // i18n options  
-    i18nOptions: {
-      defaultLocale: 'en',
-      defaultLocaleOnUrl: false,
-      locales: {
-        en: 'English',
-        es: 'Español'
+  export const createApp = ViteSSG(App, { routes })
+  ```
+  with
+  ```ts
+  // src/main.ts
+  import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
+
+  export const createApp = ViteSSG(
+    App, 
+    { routes },
+    {
+      // other options
+      // i18n options  
+      i18nOptions: {
+        defaultLocale: 'en',
+        defaultLocaleOnUrl: false,
+        locales: {
+          en: 'English',
+          es: 'Español'
+        }
       }
-    }
-  },
-  (ctx: ViteI18nSSGContext) => { /* some logic */ }
-)
-```
-7) add `i18nOptions` configuration to `ssgOptions` on `vite.config.ts` file:
-```ts
-// vite.config.ts
-ssgOptions: {
-  // other options
-  // i18n alternate base hrefs  
-  i18nAlternateBase: 'http://localhost:3000'
-}
-```
+    },
+    (ctx: ViteI18nSSGContext) => { /* some logic */ }
+  )
+  ```
+8) add `i18nOptions` configuration to `ssgOptions` on `vite.config.ts` file:
+  ```ts
+  // vite.config.ts
+  ssgOptions: {
+    // other options
+    // i18n alternate base hrefs  
+    i18nAlternateBase: 'http://localhost:3000'
+  }
+  ```
 
 ## Comparison
 
