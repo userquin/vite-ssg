@@ -2,7 +2,6 @@ import { createSSRApp, Component, createApp as createClientApp } from 'vue'
 import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
 import { createHead, HeadClient } from '@vueuse/head'
 import { deserializeState, serializeState } from '../utils/state'
-import { configureRouterBeforeEachEntryServer } from '../utils/utils'
 import { ClientOnly } from './components/ClientOnly'
 import type { RouterOptions, ViteSSGContext, ViteSSGClientOptions } from '../types'
 
@@ -56,7 +55,18 @@ export function ViteSSG(
 
     await fn?.(context)
 
-    configureRouterBeforeEachEntryServer(router, context)
+    let entryRoutePath: string | undefined
+    let isFirstRoute = true
+    router.beforeEach((to, from, next) => {
+      if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
+        // The first route is rendered in the server and its state is provided globally.
+        isFirstRoute = false
+        entryRoutePath = to.path
+        to.meta.state = context.initialState
+      }
+
+      next()
+    })
 
     if (!client) {
       router.push(routerOptions.base || '/')

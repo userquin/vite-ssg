@@ -5,7 +5,7 @@ import App from './App.vue'
 
 // import i18n resources
 // https://vitejs.dev/guide/features.html#glob-import
-const globalMessages: any = Object.fromEntries(Object.entries(import.meta.globEager('../../locales/*.yml'))
+const i18nMessages: any = Object.fromEntries(Object.entries(import.meta.globEager('../../locales/*.yml'))
   .map(([key, value]) => [key.slice(14, -4), value.default]),
 )
 
@@ -13,7 +13,9 @@ const i18nOptions: I18nOptions = {
   locales,
   defaultLocale,
   defaultLocaleOnUrl,
-  globalMessages,
+  async globalMessages() {
+    return i18nMessages as Record<string, any>
+  },
   // async(locale, to) => {
   //   try {
   //     const messagesModule = await import(/* @vite-ignore */ `../pages/${to.meta.rawI18nPath}.json5`)

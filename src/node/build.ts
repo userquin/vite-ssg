@@ -8,7 +8,7 @@ import { JSDOM, VirtualConsole } from 'jsdom'
 import { RollupOutput } from 'rollup'
 import { ViteSSGContext, ViteSSGOptions } from '../client'
 import { createLocalePathRoute } from '../i18n/utils'
-import { I18nOptions } from '../i18n/types'
+import { I18nSSGHeadConfigurer, ViteSSGLocale } from '../i18n/types'
 import { renderPreloadLinks } from './preload-links'
 import { buildLog, routesToPaths, getSize } from './utils'
 
@@ -21,15 +21,30 @@ function DefaultIncludedRoutes(paths: string[]) {
   return paths.filter(i => !i.includes(':') && !i.includes('*'))
 }
 
-async function checkI18nOptions(mergedOptions: ViteSSGOptions): Promise<I18nOptions | undefined> {
-  const obj = mergedOptions as any
-  if (obj.i18nOptions) {
-    if (typeof obj.i18nOptions === 'function')
-      return await obj.i18nOptions()
-
-    return obj.i18nOptions
+function extractI18nOptions(context: ViteSSGContext<true> | ViteSSGContext<false>): {
+  defaultLocale: string
+  locales: ViteSSGLocale[]
+  defaultLocaleOnUrl: boolean
+  localePathVariable: string
+} | undefined {
+  const i18nContext = context as any
+  if (context.router && i18nContext.locales) {
+    return {
+      defaultLocale: i18nContext.defaultLocaleOnUrl,
+      locales: i18nContext.locales,
+      defaultLocaleOnUrl: i18nContext.defaultLocaleOnUrl as boolean,
+      localePathVariable: i18nContext.localePathVariable as string,
+    }
   }
   return undefined
+}
+
+async function applyI18nSSG(context: ViteSSGContext<true> | ViteSSGContext<false>) {
+  if (context.router) {
+    const i18nContext = context as any
+    if (i18nContext.injectI18nSSG)
+      await i18nContext.injectI18nSSG()
+  }
 }
 
 export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
@@ -53,6 +68,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     onBeforePageRender,
     onPageRendered,
     onFinished,
+    i18nAlternateBase: base,
   } = mergedOptions
 
   if (fs.existsSync(ssgOut))
@@ -100,27 +116,25 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     ): Promise<ViteSSGContext<true> | ViteSSGContext<false>>
   }
 
-  const i18n = await checkI18nOptions(mergedOptions)
-
-  const base = i18n?.base
-
   const context = await createApp(false, base)
 
   const { routes, initialState } = context
 
   let routesPaths: string[]
 
-  if (i18n?.locales) {
+  const i18n = extractI18nOptions(context)
+
+  if (i18n) {
     routesPaths = []
-    const { defaultLocale, localePathVariable, locales } = i18n
+    const { defaultLocale, defaultLocaleOnUrl, localePathVariable, locales } = i18n
     const normalizedLocale = createLocalePathRoute(localePathVariable)
     const localeRoute = routes!.filter(r => r.path === normalizedLocale)
     if (localeRoute) {
       routesPaths = await includedRoutes(routesToPaths(localeRoute[0].children || []))
       const newRoutes: string[] = []
       // in case requiresMapDefaultLocale we also need to include all default routes inside the directory
-      if ((context as any).requiresMapDefaultLocale) {
-        Object.keys(locales).forEach((l) => {
+      if (defaultLocaleOnUrl) {
+        locales.map(l => l.locale).forEach((l) => {
           routesPaths.forEach((path) => {
             newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
           })
@@ -128,7 +142,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
         routesPaths.splice(0, routesPaths.length, ...newRoutes)
       }
       else {
-        Object.keys(locales).filter(l => l !== defaultLocale).forEach((l) => {
+        locales.map(l => l.locale).filter(l => l !== defaultLocale).forEach((l) => {
           routesPaths.forEach((path) => {
             newRoutes.push(`/${l}/${path.startsWith('/') ? path.substring(1) : path}`)
           })
@@ -160,10 +174,10 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
   await Promise.all(
     routesPaths.map(async(route) => {
-      const context = await createApp(false, base, {
+      const ssgContext = await createApp(false, base, {
         requestUrl: route,
       })
-      const { app, router, head } = context
+      const { app, router, head } = ssgContext
 
       if (router) {
         await router.push(route)
@@ -175,8 +189,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
       const ctx: SSRContext = {}
       const appHTML = await renderToString(app, ctx)
 
-      if ((context as any).injectI18nSSG)
-        await (context as any).injectI18nSSG()
+      await applyI18nSSG(ssgContext)
 
       // need to resolve assets so render content first
       const renderedHTML = renderHTML({ indexHTML: transformedIndexHTML, appHTML, initialState })

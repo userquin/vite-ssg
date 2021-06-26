@@ -9,6 +9,7 @@ import {
 import { App, defineComponent, h, nextTick, Ref, ref } from 'vue'
 import { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
 import { deserializeState, serializeState } from '../utils/state'
+import { ViteSSGLocale } from '../../i18n'
 import {
   LocaleInfo,
   ViteI18nSSGContext,
@@ -24,7 +25,7 @@ import {
   normalizeLocalePathVariable,
 } from './utils'
 import type { Router } from 'vue-router'
-import type { RouterConfiguration } from '../utils/types'
+import type { RouterConfiguration } from './types'
 
 async function createI18nRouter(
   app: App,
@@ -35,7 +36,6 @@ async function createI18nRouter(
 ): Promise<{
     router: Router
     context: ViteI18nSSGContext
-    requiresMapDefaultLocale?: boolean
   }> {
   const { client, isClient, routerOptions, i18n: i18nConfiguration, i18nOptions, requestHeaders } = configuration
 
@@ -122,19 +122,15 @@ async function createI18nRouter(
 
   const availableLocales = Array.from(localesMap.values())
 
-  let messages: Record<string, any> | undefined
-
   const {
-    globalMessages,
     routeMessages,
     headConfigurer,
     ssgHeadConfigurer,
   } = i18nOptions
 
-  if (typeof globalMessages === 'function')
-    messages = await globalMessages()
-  else if (globalMessages)
-    messages = globalMessages
+  const globalMessages = await i18nOptions.globalMessages?.()
+
+  console.log(globalMessages)
 
   // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
   // todo@userquin: review also globalInjection argument
@@ -143,7 +139,7 @@ async function createI18nRouter(
     globalInjection: true,
     fallbackLocale: defaultLocale,
     availableLocales: availableLocales.map(l => l.locale),
-    messages: messages || {},
+    messages: globalMessages || {},
     locale: localeInfo.current,
   })
 
@@ -172,8 +168,9 @@ async function createI18nRouter(
     localePathVariable: normalizedLocalePathVariable,
   }
 
+  const locales = Array.from(localesMap.values())
   // provide some helpers
-  provideLocales(app, Array.from(localesMap.values()))
+  provideLocales(app, locales)
   provideHeadObject(app, headObject)
   provideDefaultLocale(app, defaultViteSSGLocale)
 
@@ -200,7 +197,10 @@ async function createI18nRouter(
     client,
     router,
     localeRoutes,
+    defaultLocale,
+    locales,
     requiresMapDefaultLocale,
+    localePathVariable,
     i18n,
     fn,
     transformState,
@@ -243,7 +243,7 @@ async function createI18nRouter(
   }
 
   // return i18n stuff
-  return { router, context, requiresMapDefaultLocale }
+  return { router, context }
 }
 
 async function initializeState(
@@ -253,12 +253,27 @@ async function initializeState(
   client: boolean,
   router: Router,
   routes: RouteRecordRaw[],
-  requiresMapDefaultLocale: boolean,
+  defaultLocale: string,
+  locales: ViteSSGLocale[],
+  defaultLocaleOnUrl: boolean,
+  localePathVariable: string,
   i18n: I18n<Record<string, any>, unknown, unknown, false>,
   fn?: (context: ViteI18nSSGContext) => Promise<void> | void,
   transformState?: (state: any) => any,
 ): Promise<ViteI18nSSGContext> {
-  const context: ViteI18nSSGContext = { app, head, isClient, router, routes, requiresMapDefaultLocale, i18n, initialState: {} }
+  const context: ViteI18nSSGContext = {
+    app,
+    head,
+    isClient,
+    router,
+    routes,
+    locales,
+    defaultLocale,
+    defaultLocaleOnUrl,
+    localePathVariable,
+    i18n,
+    initialState: {},
+  }
 
   if (client)
   // @ts-ignore
@@ -278,14 +293,14 @@ export async function initViteI18nSSGContext(
 ): Promise<ViteI18nSSGContext> {
   const { client, i18n } = configuration
 
-  const { router, context, requiresMapDefaultLocale } = await createI18nRouter(app, head, configuration, fn, transformState)
+  const { router, context } = await createI18nRouter(app, head, configuration, fn, transformState)
 
   if (!client) {
     if (i18n && configuration.requestHeaders?.requestUrl)
-      await router.push({ path: configuration.requestHeaders.requestUrl })
+      router.push({ path: configuration.requestHeaders.requestUrl })
 
     else
-      await router.push(configuration.routerOptions.base || '/')
+      router.push(configuration.routerOptions.base || '/')
 
     await router.isReady()
     context.initialState = router.currentRoute.value.meta.state as Record<string, any> || {}
@@ -297,6 +312,5 @@ export async function initViteI18nSSGContext(
   return {
     ...context,
     initialState,
-    requiresMapDefaultLocale,
   }
 }

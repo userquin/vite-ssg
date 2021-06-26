@@ -1,5 +1,5 @@
-import { Composer, I18n, VueI18n } from 'vue-i18n'
-import { ViteSSGClientOptions, ViteSSGContext, ViteSSGOptions } from '../types'
+import { Composer, I18n, TranslateResult } from 'vue-i18n'
+import { RouterOptions, ViteSSGClientOptions, ViteSSGContext, ViteSSGOptions } from '../types'
 import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n } from './composables'
 import type { Locale } from 'vue-i18n'
 import type { HeadAttrs, HeadClient, HeadObject } from '@vueuse/head'
@@ -23,10 +23,12 @@ export type AvailableLocale = {
   to: RouteLocationRaw
 }
 
+export type I18nGlobalMessages = () => Promise<Record<string, any>> | Record<string, any>
+
 export type I18nRouteMessages = (
   locale: ViteSSGLocale,
   to: RouteLocationNormalized
-) => (Promise<Record<string, any>> | Record<string, any> | undefined)
+) => Promise<Record<string, any>> | Record<string, any> | undefined
 
 export type I18nHeadConfigurer = (
   route: RouteLocationNormalized,
@@ -38,7 +40,7 @@ export type I18nHeadConfigurer = (
 export type I18nSSGHeadConfigurer = (
   route: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
-  translate: (key: string, params?: any) => string | undefined,
+  translate: (key: string, params?: unknown[] | Record<string, unknown>) => TranslateResult | undefined,
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
@@ -80,7 +82,7 @@ export interface I18nOptions {
   /**
    * Global messages resources.
    */
-  globalMessages?: () => Promise<Record<string, any>> | Record<string, any>
+  globalMessages?: I18nGlobalMessages
   /**
    * If not using `<i18n>` custom block on your `SFC` page component, you can customize configureing this callback.
    */
@@ -98,23 +100,26 @@ export interface I18nOptions {
 export interface ViteI18nSSGContext extends ViteSSGContext<true> {
   router: Router
   head: HeadClient
+  defaultLocale: string
+  locales: ViteSSGLocale[]
+  defaultLocaleOnUrl: boolean
+  localePathVariable: string
   i18n: I18n<Record<string, any>, unknown, unknown, false>
-  requiresMapDefaultLocale?: boolean
   injectI18nSSG?: () => Promise<void>
 }
 
 export interface ViteI18nSSGOptions extends ViteSSGOptions {
   /**
-   * I18n options.
+   * Base foralternate hrefs.
    */
-  i18nOptions: (() => Promise<I18nOptions>) | I18nOptions
+  alternateHrefsBase?: string
 }
 
 export interface ViteI18nSSGClientOptions extends ViteSSGClientOptions {
   /**
    * I18n options.
    */
-  i18nOptions: (() => Promise<I18nOptions>) | I18nOptions
+  i18nOptions: () => Promise<I18nOptions> | I18nOptions
 }
 
 export type Crawling = {
@@ -136,6 +141,28 @@ export type LocaleInfo = {
 }
 
 export { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n }
+
+export type I18nConfigurationOptions = {
+  localesMap: Map<string, ViteSSGLocale>
+  defaultLocale: string
+  defaultLocaleOnUrl: boolean
+  localePathVariable: string
+  cookieName: string
+  base?: string
+}
+
+export type RouterConfiguration = {
+  client: boolean
+  isClient: boolean
+  routerOptions: RouterOptions
+  requestHeaders?: {
+    acceptLanguage?: string
+    requestUrl?: string
+    localeCookie?: string
+  }
+  i18nOptions: I18nOptions
+  i18n: I18nConfigurationOptions
+}
 
 // extend vue-router meta
 declare module 'vue-router' {
@@ -248,7 +275,7 @@ declare module 'vue-router' {
     injectI18nSSGData?: (
       head: HeadObject,
       locale: ViteSSGLocale,
-      translate: (key: string, params?: any) => string | undefined,
+      translate: (key: string, params?: unknown[] | Record<string, unknown>) => TranslateResult | undefined,
       title?: string,
       description?: string,
       image?: string

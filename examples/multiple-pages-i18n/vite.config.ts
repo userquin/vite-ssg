@@ -5,9 +5,10 @@ import Pages from 'vite-plugin-pages'
 import Components from 'vite-plugin-components'
 import Vue from '@vitejs/plugin-vue'
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
-import i18nOptions from './ssg-i18n-options.json'
 
 const pages = new Map<string, number>()
+
+const i18nAlternateBase = (process.env.I18N_BASE ? process.env.I18N_BASE : undefined)
 
 const config: UserConfig = {
   resolve: {
@@ -60,13 +61,7 @@ const config: UserConfig = {
       })
       console.log('FINISHED')
     },
-    i18nOptions() {
-      if (process.env.I18N_BASE)
-        (i18nOptions as any).base = process.env.I18N_BASE
-
-      console.log(i18nOptions)
-      return i18nOptions
-    },
+    i18nAlternateBase,
   },
   optimizeDeps: {
     include: [

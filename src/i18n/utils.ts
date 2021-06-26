@@ -1,11 +1,14 @@
-import { RouteLocationNormalized, RouteLocationRaw, RouteMeta, Router } from 'vue-router'
-import { isRef, WritableComputedRef } from '@vue/reactivity'
+import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
+import { WritableComputedRef } from '@vue/reactivity'
 import { nextTick } from 'vue'
-import { ViteSSGContext } from '../types'
-import { configureRouterBeforeEachEntryServer } from '../utils/utils'
-import { DefaultViteSSGLocale, I18nHeadConfigurer, I18nSSGHeadConfigurer, ViteI18nSSGContext } from './types'
+import {
+  DefaultViteSSGLocale,
+  I18nConfigurationOptions,
+  I18nHeadConfigurer,
+  I18nSSGHeadConfigurer,
+  ViteI18nSSGContext,
+} from './types'
 import type { Ref } from 'vue'
-import type { I18nConfigurationOptions } from '../utils/types'
 import type { I18nOptions, I18nRouteMessages, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
 import type { HeadClient, HeadObject } from '@vueuse/head'
@@ -197,7 +200,7 @@ async function configureHead(
 async function injectSSGHeadObject(
   to: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
-  translate: (key: string, locale?: string, params?: any) => string | undefined,
+  translate: (key: string, params?: unknown[] | Record<any, unknown>) => string | undefined,
   locale: ViteSSGLocale,
   ssgHeadConfigurer?: I18nSSGHeadConfigurer,
 ) {
@@ -393,7 +396,18 @@ export async function configureRouteEntryServer(
   ssgHeadConfigurer?: I18nSSGHeadConfigurer,
 ) {
   // configure router hooks
-  configureRouterBeforeEachEntryServer(router, context)
+  let entryRoutePath: string | undefined
+  let isFirstRoute = true
+  router.beforeEach((to, from, next) => {
+    if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
+      // The first route is rendered in the server and its state is provided globally.
+      isFirstRoute = false
+      entryRoutePath = to.path
+      to.meta.state = context.initialState
+    }
+
+    next()
+  })
 
   router.afterEach(async(to) => {
     await nextTick()
