@@ -706,11 +706,17 @@ export const createApp = ViteSSG(
 If you want to migrate your existing application with `i18n` support, you need to do the following:
 
 1) update `vite-ssg` to the latest version 
+   
 2) add `vue-i18n` to your dependencies: `npm install vue-i18n@next` or `yarn add vue-i18n@next`
+   
 2) change all `useRouter()` to `useI18nRouter()`: `import {useI18nRouter} from 'vite-ssg/i18n'`
+   
 3) change all `useI18n()`, if you are using it, with `useGlobalI18n()`: `import { useGlobalI18n } from 'vite-ssg/i18n'`
+   
 4) change all `<router-link>` to `<i18n-router-link>`: just keep all props, only change the component
+   
 5) remove all `useHead` in all your pages: `vite-ssg/i18n` will handle changes for you
+   
 6) change the import of `ViteSSG` on your `main.ts`:
   ```ts
   // src/main.ts
@@ -722,7 +728,10 @@ If you want to migrate your existing application with `i18n` support, you need t
   ```ts
   // src/main.ts
   import { ViteSSG } from 'vite-ssg/i18n'
+
+  export const createApp = ViteSSG(App, { routes }, i18nOptions: { /* i18n options */ })
   ```
+
 7) if you need to configure `vue-i18n` global messages, you need to change:
   ```ts
   // src/main.ts
@@ -753,6 +762,7 @@ If you want to migrate your existing application with `i18n` support, you need t
     (ctx: ViteI18nSSGContext) => { /* some logic */ }
   )
   ```
+
 8) add `i18nOptions` configuration to `ssgOptions` on `vite.config.ts` file:
   ```ts
   // vite.config.ts
