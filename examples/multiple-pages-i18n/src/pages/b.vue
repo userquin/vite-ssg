@@ -83,5 +83,5 @@ es:
   <br />
   <counter />
   <br />
-  <img src="../assets/test.jpg" :alt="t('PageB.imgtitle')">
+  <img src="../assets/test.jpg" :alt="t('PageB.imgtitle')" width="640" height="485">
 </template>

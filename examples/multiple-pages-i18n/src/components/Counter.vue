@@ -24,6 +24,15 @@ const counter = ref(props.init || 0)
 <style scoped>
 .counter {
   border: 2px dashed #3eaf7c;
-  padding: 5px 10px 10px 10px;
+  padding: 0.5rem 10px 10px 10px;
+}
+button {
+  padding: 0.5rem;
+}
+button:first-of-type {
+  margin-top: 0.5rem;
+}
+button + button {
+  margin-left: 1rem;
 }
 </style>

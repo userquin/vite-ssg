@@ -34,7 +34,6 @@ importers:
       html-minifier: 4.0.0
       jsdom: 16.6.0
       prettier: 2.3.1
-      vue-i18n: 9.1.6_vue@3.1.1
       yargs: 17.0.1
     devDependencies:
       '@antfu/eslint-config': 0.6.6_eslint@7.28.0+typescript@4.3.3
@@ -53,6 +52,7 @@ importers:
       typescript: 4.3.3
       vite: 2.3.7
       vue: 3.1.1
+      vue-i18n: 9.1.6_vue@3.1.1
       vue-router: 4.0.9_vue@3.1.1
 
   examples/multiple-pages:
@@ -4805,7 +4805,6 @@ packages:
       '@intlify/vue-devtools': 9.1.6
       '@vue/devtools-api': 6.0.0-beta.14
       vue: 3.1.1
-    dev: false
 
   /vue-router/4.0.9_vue@3.1.1:
     resolution: {integrity: sha512-i3IaZJ57YeMbRHQlqKyXdUMr5NzTCcJkn3f8u38TsZjYWtGcd3IX2zRd3389SCOwuRf11mgfHAyngR6FVDE9og==}

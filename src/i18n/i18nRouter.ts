@@ -184,7 +184,7 @@ async function createI18nRouter(
   }
 
   // register the head object
-  head!.addHeadObjs(headObject)
+  head.addHeadObjs(headObject)
 
   app.use(i18n)
   app.use(router)
