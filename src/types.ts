@@ -55,6 +55,9 @@ export interface ViteSSGOptions {
 
   onFinished?: () => void
 
+  /**
+   * Base for all alternate href links for `vite-ssg/i18n`.
+   */
   i18nAlternateBase?: string
 }
 
