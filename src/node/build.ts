@@ -134,7 +134,6 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
     const localeRoute = routes!.filter(r => r.path === normalizedLocale)
     if (localeRoute) {
       routesPaths = await includedRoutes(routesToPaths(localeRoute[0].children || []))
-      console.log(routesPaths)
       const newRoutes: string[] = []
       // in case requiresMapDefaultLocale we also need to include all default routes inside the directory
       if (defaultLocaleOnUrl) {
@@ -153,7 +152,6 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
         })
         routesPaths.push(...newRoutes)
       }
-      console.log(routesPaths)
     }
   }
   else {
