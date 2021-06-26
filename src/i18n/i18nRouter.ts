@@ -130,13 +130,11 @@ async function createI18nRouter(
 
   const globalMessages = await i18nOptions.globalMessages?.()
 
-  console.log(globalMessages)
-
   // todo@userquin: maybe we can accept some options on CreateVueI18nFn and merge here
   // todo@userquin: review also globalInjection argument
   const i18n = createI18n({
     legacy: false,
-    globalInjection: true,
+    globalInjection: false,
     fallbackLocale: defaultLocale,
     availableLocales: availableLocales.map(l => l.locale),
     messages: globalMessages || {},

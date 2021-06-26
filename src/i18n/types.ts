@@ -119,7 +119,7 @@ export interface ViteI18nSSGClientOptions extends ViteSSGClientOptions {
   /**
    * I18n options.
    */
-  i18nOptions: () => Promise<I18nOptions> | I18nOptions
+  i18nOptions: I18nOptions
 }
 
 export type Crawling = {

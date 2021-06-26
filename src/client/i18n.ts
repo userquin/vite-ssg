@@ -33,13 +33,7 @@ export function ViteSSG(
       localeCookie?: string
     },
   ) {
-    let useI18nOptions: I18nOptions
-    if (typeof i18nOptions === 'function')
-      useI18nOptions = await i18nOptions()
-    else
-      useI18nOptions = i18nOptions
-
-    const i18n = initializeI18n(useI18nOptions, base)
+    const i18n = initializeI18n(i18nOptions, base)
 
     const app = client
       ? createClientApp(App)
@@ -54,7 +48,7 @@ export function ViteSSG(
       app.component('I18nRouterLink', I18nRouterLink)
     }
 
-    const configuration: RouterConfiguration = { client, isClient, routerOptions, i18n, i18nOptions: useI18nOptions }
+    const configuration: RouterConfiguration = { client, isClient, routerOptions, i18n, i18nOptions }
 
     if (!client && requestHeaders)
       configuration.requestHeaders = requestHeaders

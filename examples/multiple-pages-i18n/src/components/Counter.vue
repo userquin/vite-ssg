@@ -1,3 +1,14 @@
+<script setup lang="ts">
+import { defineProps, ref } from 'vue'
+import { useGlobalI18n } from 'vite-ssg/i18n'
+
+const props = defineProps<{ init?: number }>()
+
+const { t } = useGlobalI18n()
+
+const counter = ref(props.init || 0)
+</script>
+
 <template>
   <div class="counter">
     <div>{{ t('counter', [counter]) }}</div>
@@ -9,17 +20,6 @@
     </button>
   </div>
 </template>
-
-<script setup lang="ts">
-import { defineProps, ref } from 'vue'
-import { useGlobalI18n } from 'vite-ssg/i18n'
-
-const props = defineProps<{ init?: number }>()
-
-const { t } = useGlobalI18n()
-
-const counter = ref(props.init || 0)
-</script>
 
 <style scoped>
 .counter {

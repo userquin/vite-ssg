@@ -69,6 +69,7 @@ es:
 
 <template>
   <p>{{ t('PageB.title') }}</p>
+  <br />
   <input
     id="input"
     v-model="name"
@@ -78,5 +79,9 @@ es:
     autocomplete="false"
     @keydown.enter="go"
   >
+  <br />
+  <br />
+  <counter />
+  <br />
   <img src="../assets/test.jpg" :alt="t('PageB.imgtitle')">
 </template>
