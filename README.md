@@ -685,7 +685,7 @@ export const createApp = ViteSSG(
         const meta = route.meta
         if (meta && meta.injectI18nMeta) {
           // you can delegate to default behavior
-          headObject.value = meta.injectI18nMeta(
+          meta.injectI18nMeta(
             headObject.value,
             locale,
             i18nComposer
