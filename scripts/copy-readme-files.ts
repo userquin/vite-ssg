@@ -2,6 +2,7 @@ import { copyFileSync } from 'fs'
 
 const destinations = [
   'multiple-pages',
+  'multiple-pages-i18n',
   'multiple-pages-with-store',
 ]
 
