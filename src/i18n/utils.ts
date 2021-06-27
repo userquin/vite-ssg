@@ -401,38 +401,42 @@ export async function configureRouteEntryServer(
       )
     }
   }
-  // else {
-  //   router.afterEach(async(to) => {
-  //     const paramsLocale = to.params.locale as string
-  //
-  //     const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
-  //
-  //     await loadPageMessages(
-  //       locale,
-  //       i18n,
-  //       to,
-  //       globalMessages,
-  //       routeMessages,
-  //     )
-  //
-  //     await nextTick()
-  //
-  //     localeRef.value = locale.locale
-  //
-  //     await nextTick()
-  //
-  //     router.notifyHeadHandlers?.(headObject.value)
-  //
-  //     await nextTick()
-  //
-  //     // update header
-  //     await configureHead(
-  //       to,
-  //       headObject,
-  //       i18n,
-  //       locale,
-  //       headConfigurer,
-  //     )
-  //   })
-  // }
+  else {
+    router.afterEach(async(to) => {
+      const paramsLocale = to.params.locale as string
+
+      const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
+
+      await loadPageMessages(
+        locale,
+        i18n,
+        to,
+        globalMessages,
+        routeMessages,
+      )
+
+      await nextTick()
+
+      localeRef.value = locale.locale
+
+      await nextTick()
+
+      router.notifyHeadHandler?.(to.fullPath, headObject.value)
+
+      await nextTick()
+
+      // update header
+      await configureHead(
+        to,
+        headObject,
+        i18n,
+        locale,
+        headConfigurer,
+      )
+
+      await nextTick()
+
+      context.head?.updateDOM()
+    })
+  }
 }
