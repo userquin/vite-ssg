@@ -662,10 +662,10 @@ export const createApp = ViteSSG(
 #### Customizing head for each page
 
 You can register your `custom head handler on sfc page` components using `registerCustomHeadHandler` on
-you `setup` script. Beware, you can only use it on `page sfc` components, since it is registered per route path.
+your `setup` script. Beware, you can only use it on `page sfc` components, since it is registered per route path.
 
-You don't need to register a global handler to remove head entries present in one page but not in another, `vite-ssg/i18n`
-will take for you with a head reset on each transition.
+You don't need to register a global handler to remove head entries present in one page but not in another, 
+`vite-ssg/i18n` will take for you, resetting the head on each transition.
 
 You can use `head helpers` such as `addMetaHeadName` and `addMetaHeadProperty` to add head entries.
 
@@ -680,7 +680,19 @@ const { t } = useGlobalI18n()
 registerCustomHeadHandler((head) => {
   addMetaHeadName('keywords', t('PageB.keywords'), head)
 }, router)
+/*
+if you don't use the `router`, you can remove the import for `useI18nRouter`
+also `const router = useI18nRouter()` code and then use it:
+
+registerCustomHeadHandler((head) => {
+  addMetaHeadName('keywords', t('PageB.keywords'), head)
+})
+ */
 </script>
+<route lang="yaml">
+meta:
+  pageI18nKey: PageB
+</route>
 <i18n lang="yaml" global>
 en:
   PageB:
@@ -688,8 +700,7 @@ en:
     description: Website description
     keywords: HTML, CSS, JavaScript examples
     imgtitle: Image for hello I am B
-    whats-your-name: What is your name
-
+    whats-your-name: What is your name?
 es:
   PageB:
     title: Hola
@@ -697,8 +708,10 @@ es:
     description: Descripción del sitio web
     imgtitle: Imagen para hola soy B
     whats-your-name: ¿Cómo te llamas?
-
 </i18n>
+<template>
+  <h1>{{ t('PageB.title') }}</h1>
+</template>
 ```
 
 You can also customize the head of each page using `headConfigurer` global callback from `i18nOptions` option.

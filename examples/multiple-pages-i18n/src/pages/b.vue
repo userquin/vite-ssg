@@ -52,7 +52,6 @@ registerCustomHeadHandler((head) => {
 meta:
   pageI18nKey: PageB
 </route>
-
 <i18n lang="yaml" global>
 en:
   PageB:
@@ -60,8 +59,7 @@ en:
     description: Website description
     keywords: HTML, CSS, JavaScript examples
     imgtitle: Image for hello I am B
-    whats-your-name: What is your name
-
+    whats-your-name: What is your name?
 es:
   PageB:
     title: Hola
@@ -69,7 +67,6 @@ es:
     description: Descripción del sitio web
     imgtitle: Imagen para hola soy B
     whats-your-name: ¿Cómo te llamas?
-
 </i18n>
 
 <template>
