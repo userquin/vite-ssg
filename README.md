@@ -474,7 +474,7 @@ For example, you can use `yml/yaml` files (you can also use `json` or `json5`):
   <h1>{{ t('PageA.title') }}</h1>
 </template>
 ```
-where `../../locales/pages/page-a.yml` includes:
+where `../../locales/pages/page-a.yml` content is:
 ```yml
 // locales/pages/page-a.yml
 en:
