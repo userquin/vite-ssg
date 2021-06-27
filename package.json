@@ -64,7 +64,7 @@
     "example:i18n:build": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run build",
     "example:i18n:serve": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run serve",
     "example:i18n:build-serve": "npm run copy-readme-files && npm -C examples/multiple-pages-i18n run build-serve",
-    "build": "rimraf dist && tsup src/index.ts src/client/i18n.ts src/client/single-page.ts src/node/cli.ts --dts --external vue,@vue/reactivity --format cjs,esm && npm run copy-dts",
+    "build": "rimraf dist && tsup src/index.ts src/client/i18n.ts src/client/single-page.ts src/node/cli.ts --dts --external @vue/reactivity --format cjs,esm && npm run copy-dts",
     "prepublishOnly": "npm run build",
     "release": "npx git-ensure -a && npx bumpp --push --tag --commit"
   },

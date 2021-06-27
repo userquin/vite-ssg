@@ -308,8 +308,8 @@ By default, `vite-ssg/i18n` will register `/:locale?` as the parent of all your 
 
 You can change the `locale` name using `localePathVariable` on `i18nOptions`.
 
-The default locale will not be included in the browser url, unless it is explicitly configured in the 
-`defaultLocaleOnUrl: true` option, or your routes contain a dynamic route as a higher level route.
+The default locale will not be included in the browser url, unless it is explicitly configured with 
+`defaultLocaleOnUrl: true` option, or your routes contain a dynamic route as a top level route.
 
 ### Components and composables
 
@@ -360,7 +360,7 @@ the header in some `page` to do some customization.
 
 ### I18n Configuration
 
-You need to add `vue-i18n` to your dependencies: `npm install vue-i18n@next` or `yarn add vue-i18n@next`
+You need to add `vue-i18n@next` to your dependencies: `npm install vue-i18n@next` or `yarn add vue-i18n@next`
 
 Configure `i18nAlternateBase` on `ssgOptions` on `vite.config.ts` file for alternate hrefs:
 ```ts
@@ -401,11 +401,14 @@ export const createApp = ViteSSG(
 We recommend use `<i18n global>` component in your `SFC` using external location when the messages are huge or inlined
 when messages are few.
 
-In both cases, you need to install `@intlify/vite-plugin-vue-i18n` as `dev dependency`:
-`npm i -D @intlify/vite-plugin-vue-i18n` or `yarn add -D @intlify/vite-plugin-vue-i18n`.
+In both cases, you need to install `@intlify/vite-plugin-vue-i18n` plugin as `dev dependency`:
+```shell
+npm i -D @intlify/vite-plugin-vue-i18n` or `yarn add -D @intlify/vite-plugin-vue-i18n
+```
 
 Once installed, you will need to configure the plugin on your `vite.config.ts` file:
 ```ts
+// vite.config.ts
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
 
 plugins: [
@@ -415,7 +418,7 @@ plugins: [
 
 #### Using inlined messages
 
-In your `SFC` you only need to add the `<i18n global>` component (you can see options [here](https://vue-i18n.intlify.dev/guide/advanced/sfc.html#basic-usage))
+In your `SFC` you only need to add the `<i18n global>` custom block (you can see options [here](https://vue-i18n.intlify.dev/guide/advanced/sfc.html#basic-usage))
 
 For example, you can use `yml/yaml` (you can also use `json` or `json5`):
 ```html
@@ -442,10 +445,10 @@ es:
 
 #### Using external messages
 
-In your `SFC` you only need to add the `<i18n global src="<external location relative to the page component>">` component (you can see options [here](https://vue-i18n.intlify.dev/guide/advanced/sfc.html#basic-usage))
+In your `SFC` you only need to add the `<i18n global src="<external location relative to the component>">` custom block (you can see options [here](https://vue-i18n.intlify.dev/guide/advanced/sfc.html#basic-usage))
 
-In order to use external messages to work, you will need to configure `@intlify/vite-plugin-vue-i18n` including
-the paths where it can find external resources you configure:
+In order to use external messages to work, you will need to configure `@intlify/vite-plugin-vue-i18n` plugin including
+the paths where it can find external resources you use on `i18n` custom blocks:
 ```ts
 // vite.config.ts
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
@@ -498,7 +501,8 @@ const routes = [
 ]
 ```
 
-If you are using `vite-plugin-pages` plugin, there is a way to include `pageI18nKey` inside your `SFC` page (nice, no?):
+If you are using `vite-plugin-pages` plugin, there is a way to include `pageI18nKey` inside your `SFC` page using
+`route` custom block (nice, no?):
 ```html
 // src/pages/page-a.vue
 <route lang="yaml">
@@ -519,39 +523,47 @@ meta:
 ```
 
 #### What will `vite-ssg/i18n` include for you on the head page?
-1) `lang` attribute for `html` element:
+
+- `lang` attribute for `html` element:
 ```html
 <html lang="en">
 ```
-2) `title` and `og:title` head entries from `route.meta.title` or looking for it from the `i18n` composer using 
+
+- `title` and `og:title` head entries from `route.meta.title` or looking for it from the `i18n` composer using 
 `${route.meta.pageI18nKey}.${route.meta.titleKey}`:
 ```html
 <title><TITLE></title>
 ```
-3) `description` and `og:description` meta head entries from `route.meta.description` or looking for it from the `i18n` 
+
+- `description` and `og:description` meta head entries from `route.meta.description` or looking for it from the `i18n` 
 composer using `${route.meta.pageI18nKey}.${route.meta.descriptionKey}`:
 ```html
 <meta name="description" content="<DESCRIPTION>">
 ```
-4) Meta tag for `og:locale` for the current locale:
+
+- Meta tag for `og:locale` for the current locale:
 ```html
 <meta property="og:locale" content="en">
 ```
-5) Meta tags for `og:image` and `twitter:card` from `route.meta.image` or looking for it from the `i18n` 
+
+- Meta tags for `og:image` and `twitter:card` from `route.meta.image` or looking for it from the `i18n` 
 composer using `${route.meta.pageI18nKey}.${route.meta.imageKey}`, `twitter:card` will be added only if `og:image` 
 is present:
 ```html
 <meta property="og:image" content="<IMAGE>">
 <meta property="twitter:card" content="summary_large_image">
 ```   
-6) Meta tag to avoid browser showing page translation popup:
+
+- Meta tag to avoid browser showing page translation popup:
 ```html
 <meta name="google" content="notranslate">
 ```
-7) `link`s for alternate urls for each locale, for example ( `en` is the default locale ). Remember that you will
-   need to provide the `base` option when generation html pages, since these `alternate` will require the `href`
-   to include also the protocol, `http or https`, (see [Guidelines for all methods](https://developers.google.com/search/docs/advanced/crawling/localized-versions#all-method-guidelines)).
-   For client side, there is no need to include it, `vite-ssg` will use `window.location.origin`.
+
+- `link`s for alternate urls for each local. Remember that you will need to provide the `base` option when generation 
+   html pages, since these `alternate` will require the `href` to include also the protocol, `http or https`, 
+   (see [Guidelines for all methods](https://developers.google.com/search/docs/advanced/crawling/localized-versions#all-method-guidelines)).
+   For client side, there is no need to include it, `vite-ssg/i18n` will use `window.location.origin`.
+   For example ( `en` is the default locale ), `vite-ssg/i18n` will generate:
 ```html
 <link rel="alternate" hreflang="x-default" href="http://localhost:3000/route">
 <link rel="alternate" hreflang="es" href="http://localhost:3000/es/route">
@@ -564,12 +576,12 @@ see [Customizing head for each page](#customizing-head-for-each-page) below.
 
 By default `vite-ssg/i18n` will do a lot for you, but you can customize your own behavior via callbacks using `i18nOptions` option.
 
-#### Registering I18n global messages
+#### Registering i18n global messages
 
 You may have a set of `global messages` that will be shared between all pages of your application (for example common buttons
 texts, dialog messages, etc...).
 
-You can provide these `global messages` using the callback `globalMessageResolver`, for example:
+You can provide these `global messages` using `globalMessages` from `i18nOptions` option, for example:
 ```ts
 // src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
@@ -601,9 +613,11 @@ export const createApp = ViteSSG(
 #### Loading custom page messages resouces
 
 Instead of using `<i18n>` component on your `SFC` page components, you can customize it using `import.meta.glob`, `import.meta.globEager`
-or `dynamic imports` on `routeMessages` callback in from `i18nOptions` option. 
+or `dynamic imports` on `routeMessages` callback from `i18nOptions` option. 
 
-`vite-ssg` will take care for you exposing under `i18n` global composer. For example:
+`vite-ssg/i18n` will take care for you exposing it under `i18n` global composer. 
+
+For example, you can use `dynamic import`:
 ```ts
 // src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
