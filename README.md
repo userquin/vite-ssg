@@ -715,7 +715,7 @@ es:
 ```
 
 You can also customize the head of each page using `headConfigurer` global callback from `i18nOptions` option.
-Beware, this callback will be called for all route pages.
+Beware, this callback will be called for each route.
 ```ts
 // src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
