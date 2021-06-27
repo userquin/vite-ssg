@@ -42,12 +42,6 @@ export function detectClientLocale(cookieName: string, defaultLocale: string, lo
     firstDetection = false
   }
   else {
-    // navigator.languages:    Chrome & FF
-    // navigator.language:     Safari & Others
-    // navigator.userLanguage: IE & Others
-    // @ts-ignore
-    const languages = navigator.languages || [navigator.language || navigator.userLanguage]
-
     // lookup current or use default
     current = detectPreferredClientLocale(defaultLocale, localesMap)
   }
@@ -325,7 +319,7 @@ export function configureClientNavigationGuards(
 
   // the head object is updated before step 11 on router navigation guard on the new route
   // here were are ready to update the head, will be flush
-  // the page resources are resolved here, since the component on afterEach is not yet resolved
+  // the page resources are resolved here, since the component on beforeEach is not yet resolved
   router.afterEach(async(to) => {
     const paramsLocale = to.params.locale as string
 
