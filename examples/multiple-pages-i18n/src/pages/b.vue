@@ -29,11 +29,10 @@
 </i18n>
 -->
 <script setup lang="ts">
-import { defineProps, onMounted, ref } from 'vue'
-import { useI18nRouter, useGlobalI18n } from 'vite-ssg/i18n'
+import { defineProps, ref } from 'vue'
+import { useI18nRouter, useGlobalI18n, addMetaHeadName, registerCustomHeadHandler } from 'vite-ssg/i18n'
 
 const props = defineProps({ locale: String })
-
 const router = useI18nRouter()
 const { t } = useGlobalI18n()
 
@@ -43,6 +42,10 @@ const go = () => {
   if (name.value)
     router.push(`/hi/${encodeURIComponent(name.value)}`)
 }
+registerCustomHeadHandler((head) => {
+  addMetaHeadName('keywords', t('PageB.keywords'), head)
+}, router)
+
 </script>
 
 <route lang="yaml">
@@ -55,12 +58,14 @@ en:
   PageB:
     title: Hello
     description: Website description
+    keywords: HTML, CSS, JavaScript examples
     imgtitle: Image for hello I am B
     whats-your-name: What is your name
 
 es:
   PageB:
     title: Hola
+    keywords: Ejemplos HTML, CSS, JavaScript
     description: Descripción del sitio web
     imgtitle: Imagen para hola soy B
     whats-your-name: ¿Cómo te llamas?

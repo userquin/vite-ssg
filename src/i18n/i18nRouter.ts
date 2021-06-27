@@ -7,7 +7,6 @@ import {
   RouterView,
 } from 'vue-router'
 import { App, defineComponent, h, nextTick, Ref, ref } from 'vue'
-import { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
 import { deserializeState, serializeState } from '../utils/state'
 import { ViteSSGLocale } from '../../i18n'
 import {
@@ -15,15 +14,17 @@ import {
   ViteI18nSSGContext,
 } from './types'
 import { prepareHead } from './crawling'
-import { provideDefaultLocale, provideHeadObject, provideLocales } from './composables'
+import { initializeHead, newI18nRouter, provideDefaultLocale, provideHeadObject, provideLocales } from './composables'
 import {
   createLocalePathRoute,
   detectClientLocale,
   detectServerLocale,
   configureClientNavigationGuards,
   configureRouteEntryServer,
-  normalizeLocalePathVariable, resolveNewRouteLocationNormalized, resolveNewRawLocationRoute,
+  normalizeLocalePathVariable,
 } from './utils'
+import type { I18nRouter } from './composables'
+import type { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
 import type { Router } from 'vue-router'
 import type { RouterConfiguration } from './types'
 
@@ -34,7 +35,7 @@ async function createI18nRouter(
   fn?: (context: ViteI18nSSGContext) => Promise<void> | void,
   transformState?: (state: any) => any,
 ): Promise<{
-    router: Router
+    router: I18nRouter
     context: ViteI18nSSGContext
   }> {
   const { client, isClient, routerOptions, i18n: i18nConfiguration, i18nOptions, requestHeaders } = configuration
@@ -125,7 +126,6 @@ async function createI18nRouter(
   const {
     routeMessages,
     headConfigurer,
-    ssgHeadConfigurer,
   } = i18nOptions
 
   let globalMessages: Record<string, any> | undefined
@@ -193,12 +193,14 @@ async function createI18nRouter(
 
   await nextTick()
 
+  const i18nRouter = newI18nRouter(router, localeRef, defaultViteSSGLocale)
+
   const context = await initializeState(
     app,
     head,
     isClient,
     client,
-    router,
+    i18nRouter,
     localeRoutes,
     defaultLocale,
     locales,
@@ -212,7 +214,7 @@ async function createI18nRouter(
   // configure router hooks
   let entryRoutePath: string | undefined
   let isFirstRoute = true
-  router.beforeEach((to, from, next) => {
+  i18nRouter.beforeEach((to, from, next) => {
     if (isFirstRoute || (entryRoutePath && entryRoutePath === to.path)) {
       // The first route is rendered in the server and its state is provided globally.
       isFirstRoute = false
@@ -220,13 +222,16 @@ async function createI18nRouter(
       to.meta.state = context.initialState
     }
 
+    initializeHead(headObject.value)
+
     next()
   })
 
   // we only need handle the route logic on the client side
   if (client && isClient) {
     configureClientNavigationGuards(
-      router,
+      app,
+      i18nRouter,
       head!,
       headObject,
       localeInfo,
@@ -245,7 +250,7 @@ async function createI18nRouter(
   else {
     await configureRouteEntryServer(
       requestHeaders?.requestUrl || routerOptions.base || '/',
-      router,
+      i18nRouter,
       context,
       headObject,
       localeRef,
@@ -256,12 +261,11 @@ async function createI18nRouter(
       globalMessages,
       routeMessages,
       headConfigurer,
-      ssgHeadConfigurer,
     )
   }
 
   // return i18n stuff
-  return { router, context }
+  return { router: i18nRouter, context }
 }
 
 async function initializeState(

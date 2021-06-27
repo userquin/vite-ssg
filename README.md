@@ -323,6 +323,9 @@ Since `vite-ssg/i18n` will handle `i18n` for you, you only need to use some `loc
 
 - `useGlobalI18n` function: will expose `useI18n({ useScope: 'global' })`.
   
+- `registerCustomHeadHandler`, `addMetaHeadName` and `addMetaHeadProperty` functions: `custom head handler on sfc page`
+  and   utilities for manipulating head on `sfc page` components.
+  
 - `useAvailableLocales` function: will expose the locales you have configured, and so you can create a locale switcher.
   You can use in that case `router-view`, the `available locales` will include the `to` prop
   for the current route:
@@ -658,7 +661,48 @@ export const createApp = ViteSSG(
 
 #### Customizing head for each page
 
-You can customize the head of each page using `headConfigurer` callback from `i18nOptions` option:
+You can register your `custom head handler on sfc page` components using `registerCustomHeadHandler` on
+you `setup` script. Beware, you can only use it on `page sfc` components, since it is registered per route path.
+
+You don't need to register a global handler to remove head entries present in one page but not in another, `vite-ssg/i18n`
+will take for you with a head reset on each transition.
+
+You can use `head helpers` such as `addMetaHeadName` and `addMetaHeadProperty` to add head entries.
+
+For example, we can add `keywords` to the head using this code:
+```html
+<script setup lang="ts">
+import { useI18nRouter, useGlobalI18n, addMetaHeadName, registerCustomHeadHandler } from 'vite-ssg/i18n'
+
+const router = useI18nRouter()
+const { t } = useGlobalI18n()
+
+registerCustomHeadHandler((head) => {
+  addMetaHeadName('keywords', t('PageB.keywords'), head)
+}, router)
+</script>
+<i18n lang="yaml" global>
+en:
+  PageB:
+    title: Hello
+    description: Website description
+    keywords: HTML, CSS, JavaScript examples
+    imgtitle: Image for hello I am B
+    whats-your-name: What is your name
+
+es:
+  PageB:
+    title: Hola
+    keywords: Ejemplos HTML, CSS, JavaScript
+    description: Descripción del sitio web
+    imgtitle: Imagen para hola soy B
+    whats-your-name: ¿Cómo te llamas?
+
+</i18n>
+```
+
+You can also customize the head of each page using `headConfigurer` global callback from `i18nOptions` option.
+Beware, this callback will be called for all route pages.
 ```ts
 // src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'

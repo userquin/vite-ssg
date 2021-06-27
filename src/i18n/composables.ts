@@ -1,15 +1,11 @@
-import {
-  Router,
-  useRoute,
-  useRouter,
-} from 'vue-router'
-import { App, computed, inject, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { HeadObjectPlain } from '@vueuse/head'
-import { readonly } from '@vue/reactivity'
+import { Router, useRoute, useRouter } from 'vue-router'
+import { App, computed, inject, onBeforeMount, onBeforeUnmount } from 'vue'
+import { Locale, useI18n } from 'vue-i18n'
+import { isRef, readonly, WritableComputedRef } from '@vue/reactivity'
 import { AvailableLocale, DefaultViteSSGLocale, ViteSSGLocale } from './types'
 import { resolveNewRawLocationRoute, resolveNewRouteLocationNormalized } from './utils'
 import type { Ref } from 'vue'
+import type { HeadObject, HeadObjectPlain } from '@vueuse/head'
 
 const localesKey = Symbol('vite-ssg:locales')
 const defaultLocaleKey = Symbol('vite-ssg:default-locale')
@@ -43,12 +39,81 @@ export function useGlobalI18n() {
   return useI18n({ useScope: 'global' })
 }
 
-export function useI18nRouter() {
-  const router = useRouter()
-  const { locale } = useGlobalI18n()
-  const defaultLocale = injectDefaultLocale()
+export function initializeHead(head: HeadObject) {
+  if (head.meta) {
+    if (isRef(head.meta))
+      head.meta.value = []
+
+    else
+      head.meta = []
+  }
+  if (head.link) {
+    if (isRef(head.link))
+      head.link.value = []
+
+    else
+      head.link = []
+  }
+  if (head.style) {
+    if (isRef(head.style))
+      head.style.value = []
+
+    else
+      head.style = []
+  }
+  if (head.htmlAttrs) {
+    if (isRef(head.htmlAttrs))
+      head.htmlAttrs.value = []
+
+    else
+      head.htmlAttrs = []
+  }
+  if (head.bodyAttrs) {
+    if (isRef(head.bodyAttrs))
+      head.bodyAttrs.value = []
+
+    else
+      head.bodyAttrs = []
+  }
+}
+
+export function addMetaHeadName(name: string, content: string, head: HeadObject) {
+  head.meta = head.meta || []
+  const metaArray = isRef(head.meta) ? head.meta.value : head.meta
+  const idx = metaArray.findIndex(m => m.name === name)
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+  metaArray.push({
+    name,
+    content,
+  })
+}
+
+export function addMetaHeadProperty(property: string, content: string, head: HeadObject) {
+  head.meta = head.meta || []
+  const metaArray = isRef(head.meta) ? head.meta.value : head.meta
+  const idx = metaArray.findIndex(m => m.property === property)
+  if (idx >= 0)
+    metaArray.splice(idx, 1)
+  metaArray.push({
+    property,
+    content,
+  })
+}
+
+export type CustomHeadHandler = (head: HeadObject) => void
+
+export type I18nRouter = Router & {
+  registerHeadHandler?: (key: string, handler: CustomHeadHandler) => void
+  unRegisterHeadHandler?: (key: string, handler: CustomHeadHandler) => void
+  notifyHeadHandler?: (key: string, head: HeadObject) => void
+}
+
+const sfcHeadHandlers = new Map<string, CustomHeadHandler>()
+
+export function newI18nRouter(router: Router, locale: WritableComputedRef<Locale>, defaultLocale?: DefaultViteSSGLocale): I18nRouter {
   if (defaultLocale) {
-    const i18nRouter: Router = {
+    return {
       currentRoute: router.currentRoute,
       options: router.options,
       back: router.back,
@@ -73,10 +138,47 @@ export function useI18nRouter() {
       resolve(to, currentLocation) {
         return resolveNewRouteLocationNormalized(router, defaultLocale, locale.value, currentLocation)
       },
+      registerHeadHandler(key, headHandler: CustomHeadHandler) {
+        sfcHeadHandlers.set(key, headHandler)
+      },
+      unRegisterHeadHandler(key: string) {
+        sfcHeadHandlers.delete(key)
+      },
+      notifyHeadHandler(key: string, head: HeadObject): void {
+        if (process.env.VITE_SSG) {
+          try {
+            sfcHeadHandlers.get(key)?.(head)
+          }
+          finally {
+            sfcHeadHandlers.delete(key)
+          }
+        }
+        else {
+          sfcHeadHandlers.get(key)?.(head)
+        }
+      },
     }
-    return i18nRouter
   }
   return router
+}
+
+export function useI18nRouter(): I18nRouter {
+  const router = useRouter()
+  const { locale } = useGlobalI18n()
+  const defaultLocale = injectDefaultLocale()
+  return newI18nRouter(router, locale, defaultLocale)
+}
+
+export function registerCustomHeadHandler(customHeadHandlers: CustomHeadHandler, i18nRouter?: I18nRouter) {
+  const router = i18nRouter || useI18nRouter()
+  if (process.env.VITE_SSG) {
+    router.registerHeadHandler?.(router.currentRoute.value.fullPath, customHeadHandlers)
+  }
+  else {
+    onBeforeMount(() => {
+      router.registerHeadHandler?.(router.currentRoute.value.fullPath, customHeadHandlers)
+    })
+  }
 }
 
 export function useAvailableLocales() {

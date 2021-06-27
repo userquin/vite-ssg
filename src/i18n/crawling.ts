@@ -59,7 +59,15 @@ function addMetaTagsForAlternativeURLs(
 }
 
 function updateMetaHead(head: HeadObject, metaArray: HeadAttrs[], title?: string, description?: string, image?: string) {
-  let idx = metaArray.findIndex(m => m.property === 'og:title')
+  let idx = metaArray.findIndex(m => m.name === 'google')
+  if (idx === -1) {
+    metaArray.push({
+      name: 'google',
+      content: 'notranslate',
+    })
+  }
+
+  idx = metaArray.findIndex(m => m.property === 'og:title')
   if (idx >= 0)
     metaArray.splice(idx, 1)
 
@@ -177,7 +185,8 @@ export function prepareHead(
       updateMetaHead(head, metaArray, titleText, descriptionText, imageText)
 
       // 6) link`s for alternate urls for each locale
-      if (!head.link && crawling.extractAlternateUrls)
+      const link = head.link && isRef(head.link) ? head.link.value : head.link
+      if ((!link || link.length === 0) && crawling.extractAlternateUrls)
         head.link = crawling.extractAlternateUrls()
 
       return head

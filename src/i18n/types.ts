@@ -1,6 +1,7 @@
-import { Composer, I18n, TranslateResult } from 'vue-i18n'
+import { Composer, I18n } from 'vue-i18n'
 import { RouterOptions, ViteSSGClientOptions, ViteSSGContext, ViteSSGOptions } from '../types'
-import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n } from './composables'
+import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n, addMetaHeadName, addMetaHeadProperty, registerCustomHeadHandler } from './composables'
+import type { CustomHeadHandler } from './composables'
 import type { Locale } from 'vue-i18n'
 import type { HeadAttrs, HeadClient, HeadObject } from '@vueuse/head'
 import type { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
@@ -34,13 +35,6 @@ export type I18nHeadConfigurer = (
   route: RouteLocationNormalized,
   headObject: Ref<HeadObject>,
   i18nComposer: Composer<Record<string, any>, unknown, unknown>,
-  locale: ViteSSGLocale,
-) => Promise<boolean> | boolean
-
-export type I18nSSGHeadConfigurer = (
-  route: RouteLocationNormalized,
-  headObject: Ref<HeadObject>,
-  translate: (key: string, params?: unknown[] | Record<string, unknown>) => TranslateResult | undefined,
   locale: ViteSSGLocale,
 ) => Promise<boolean> | boolean
 
@@ -91,10 +85,6 @@ export interface I18nOptions {
    * If you need to customize the head configure this callback.
    */
   headConfigurer?: I18nHeadConfigurer
-  /**
-   * Only available for build and `SSG`.
-   */
-  ssgHeadConfigurer?: I18nSSGHeadConfigurer
 }
 
 export interface ViteI18nSSGContext extends ViteSSGContext<true> {
@@ -140,7 +130,7 @@ export type LocaleInfo = {
   locales: Record<Locale, ViteSSGLocale>
 }
 
-export { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n }
+export { CustomHeadHandler, useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n, addMetaHeadName, addMetaHeadProperty, registerCustomHeadHandler }
 
 export type I18nConfigurationOptions = {
   localesMap: Map<string, ViteSSGLocale>

@@ -1,13 +1,14 @@
 import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import { WritableComputedRef } from '@vue/reactivity'
-import { nextTick } from 'vue'
+import { App, nextTick } from 'vue'
 import {
   DefaultViteSSGLocale,
   I18nConfigurationOptions,
   I18nHeadConfigurer,
-  I18nSSGHeadConfigurer,
   ViteI18nSSGContext,
 } from './types'
+import { initializeHead } from './composables'
+import type { I18nRouter } from './composables'
 import type { Ref } from 'vue'
 import type { I18nOptions, I18nRouteMessages, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
@@ -250,7 +251,8 @@ export function resolveNewRawLocationRoute(
 }
 
 export function configureClientNavigationGuards(
-  router: Router,
+  app: App,
+  router: I18nRouter,
   head: HeadClient,
   headObject: Ref<HeadObject>,
   localeInfo: LocaleInfo,
@@ -337,6 +339,8 @@ export function configureClientNavigationGuards(
       routeMessages,
     )
 
+    await nextTick()
+
     localeRef.value = locale.locale
 
     const { name, base } = cookieInfo
@@ -349,6 +353,10 @@ export function configureClientNavigationGuards(
 
     await nextTick()
 
+    router.notifyHeadHandler?.(to.fullPath, headObject.value)
+
+    await nextTick()
+
     await configureHead(
       to,
       headObject,
@@ -357,13 +365,15 @@ export function configureClientNavigationGuards(
       headConfigurer,
     )
 
+    await nextTick()
+
     head?.updateDOM()
   })
 }
 
 export async function configureRouteEntryServer(
   route: string,
-  router: Router,
+  router: I18nRouter,
   context: ViteI18nSSGContext,
   headObject: Ref<HeadObject>,
   localeRef: WritableComputedRef<Locale>,
@@ -374,40 +384,12 @@ export async function configureRouteEntryServer(
   globalMessages: Record<string, any> | undefined,
   routeMessages?: I18nRouteMessages,
   headConfigurer?: I18nHeadConfigurer,
-  ssgHeadConfigurer?: I18nSSGHeadConfigurer,
 ) {
-  router.afterEach(async(to) => {
-    const paramsLocale = to.params.locale as string
-
-    const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
-
-    await loadPageMessages(
-      locale,
-      i18n,
-      to,
-      globalMessages,
-      routeMessages,
-    )
-
-    await nextTick()
-
-    localeRef.value = locale.locale
-
-    await nextTick()
-
-    // update header
-    await configureHead(
-      to,
-      headObject,
-      i18n,
-      locale,
-      headConfigurer,
-    )
-  })
-
   // on SSG we need to do at the end: see node/build.ts
   if (process.env.VITE_SSG === 'true') {
     context.injectI18nSSG = async() => {
+      await nextTick()
+      router.notifyHeadHandler?.(route.startsWith('/') ? route : `/${route}`, headObject.value)
       await nextTick()
       const to = router.currentRoute.value
       await configureHead(
@@ -419,4 +401,38 @@ export async function configureRouteEntryServer(
       )
     }
   }
+  // else {
+  //   router.afterEach(async(to) => {
+  //     const paramsLocale = to.params.locale as string
+  //
+  //     const locale = localeMap.get(paramsLocale || defaultLocale.locale)!
+  //
+  //     await loadPageMessages(
+  //       locale,
+  //       i18n,
+  //       to,
+  //       globalMessages,
+  //       routeMessages,
+  //     )
+  //
+  //     await nextTick()
+  //
+  //     localeRef.value = locale.locale
+  //
+  //     await nextTick()
+  //
+  //     router.notifyHeadHandlers?.(headObject.value)
+  //
+  //     await nextTick()
+  //
+  //     // update header
+  //     await configureHead(
+  //       to,
+  //       headObject,
+  //       i18n,
+  //       locale,
+  //       headConfigurer,
+  //     )
+  //   })
+  // }
 }
