@@ -758,6 +758,12 @@ with
 // src/main.ts
 import { ViteSSG, ViteI18nSSGContext } from 'vite-ssg/i18n'
 
+// import i18n resources
+// https://vitejs.dev/guide/features.html#glob-import
+const globalMessages: Record<string, any> = Object.fromEntries(Object.entries(import.meta.globEager('../locales/*.yml'))
+  .map(([key, value]) => [key.slice(11, -4), value.default])
+)
+
 export const createApp = ViteSSG(
   App, 
   { routes },
@@ -770,12 +776,13 @@ export const createApp = ViteSSG(
       locales: {
         en: 'English',
         es: 'Español'
-      }
+      },
+      globalMessages
     }
   },
   (ctx: ViteI18nSSGContext) => { /* some logic */ }
 )
-  ```
+```
 
 - add `i18nOptions` configuration to `ssgOptions` on `vite.config.ts` file:
 ```ts
