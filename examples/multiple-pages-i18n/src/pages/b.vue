@@ -48,7 +48,7 @@ registerCustomHeadHandler((head) => {
 
 </script>
 
-<route lang="yaml">
+<route>
 meta:
   pageI18nKey: PageB
 </route>

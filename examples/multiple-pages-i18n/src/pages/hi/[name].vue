@@ -1,4 +1,4 @@
-<route lang="yaml">
+<route>
 meta:
   pageI18nKey: HiPage
 </route>
