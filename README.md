@@ -779,6 +779,7 @@ export const createApp = ViteSSG(
 You can remove all `lang` attribute on all your `router` custom blocks using this configuration:
 ```ts
 import Pages from 'vite-plugin-pages'
+
 plugins: [
   Pages({
     routeBlockLang: 'yaml',
@@ -797,6 +798,7 @@ all your `route` content with `YAML`.
 You can remove all `lang` and `global` attributes on all your `i18n` custom blocks using this configuration:
 ```ts
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
+
 plugins: [
   VueI18n({
     defaultSFCLang: 'yaml',
@@ -829,11 +831,13 @@ resolve: {
 ```ts
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
 
-VueI18n({
-  runtimeOnly: true,
-  compositionOnly: true,
-  /* other options */
-}
+plugins: [
+  VueI18n({
+    runtimeOnly: true,
+    compositionOnly: true,
+    /* other options */
+  })
+]
 ```
 
 ### Changes to be made for existing applications
