@@ -781,7 +781,7 @@ You can remove all `lang` attribute on all your `router` custom blocks using thi
 import Pages from 'vite-plugin-pages'
 plugins: [
   Pages({
-    routeBlockLang: 'yaml',  
+    routeBlockLang: 'yaml',
     /* other options */
   })
 ]
