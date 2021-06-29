@@ -401,7 +401,7 @@ export const createApp = ViteSSG(
 
 ### Localize your SFC pages/components
 
-We recommend use `<i18n global>` component in your `SFC` using external location when the messages are huge or inlined
+We recommend use `<i18n global>` custom block in your `SFC` using external location when the messages are huge or inlined
 when messages are few.
 
 In both cases, you need to install `@intlify/vite-plugin-vue-i18n` plugin as `dev dependency`:
@@ -770,6 +770,70 @@ export const createApp = ViteSSG(
   (ctx: ViteI18nSSGContext) => { /* some logic */ }
 )
 
+```
+
+### Optimizing router and i18n resources
+
+#### `vue-plugin-pages`
+
+You can remove all `lang` attribute on all your `router` custom blocks using this configuration:
+```ts
+import Pages from 'vite-plugin-pages'
+plugins: [
+  Pages({
+    routeBlockLang: 'yaml',  
+    /* other options */
+  })
+]
+```
+
+With previous configuration, you can now use `router` custom blocks without including `lang` attribute, writing 
+all your `route` content with `YAML`.
+
+#### `@intlify/vite-plugin-vue-i18n`
+
+**Warning**: only if [this PR](https://github.com/intlify/vite-plugin-vue-i18n/pull/109) is merged.
+
+You can remove all `lang` and `global` attributes on all your `i18n` custom blocks using this configuration:
+```ts
+import VueI18n from '@intlify/vite-plugin-vue-i18n'
+plugins: [
+  VueI18n({
+    defaultSFCLang: 'yaml',
+    globalSFCScope: true,
+    /* other options */
+  })
+]
+```
+
+With previous configuration, you can now use `i18n` custom blocks without including `lang` and `global` attributes, writing
+all your `i18n` content with `YAML` when inlined and using `global` scope for inlined and external `i18n` custom blocks.
+
+#### Build optimizations
+
+We are using `vue-i18n@next` plugin, to optimize your `i18n` resources you must configure your `vite.config.ts` 
+following these steps:
+
+- use `vue-i18n@next esm bundler`, configure this `alias` to `vite resolve` option (you can read about this topic 
+  [here](https://vue-i18n.intlify.dev/guide/advanced/optimization.html)):
+```ts
+resolve: {
+  alias: {
+    'vue-i18n': 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js'
+  }
+}
+```
+
+- enable `runtimeOnly` and `compositionOnly` options for `@intlify/vite-plugin-vue-i18n` plugin (you can read 
+  about this topic [here](https://vue-i18n.intlify.dev/guide/advanced/optimization.html)):
+```ts
+import VueI18n from '@intlify/vite-plugin-vue-i18n'
+
+VueI18n({
+  runtimeOnly: true,
+  compositionOnly: true,
+  /* other options */
+}
 ```
 
 ### Changes to be made for existing applications
