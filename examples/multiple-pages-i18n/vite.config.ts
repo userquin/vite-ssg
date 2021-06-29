@@ -24,6 +24,7 @@ const config: UserConfig = {
       include: [/\.vue$/, /\.md$/],
     }),
     Pages({
+      routeBlockLang: 'yaml',
       extensions: ['vue', 'md'],
     }),
     Markdown({
@@ -63,13 +64,6 @@ const config: UserConfig = {
       console.log('FINISHED')
     },
     i18nAlternateBase,
-  },
-  optimizeDeps: {
-    include: [
-      'vue',
-      'vue-i18n',
-      'vue-router',
-    ],
   },
 }
 
