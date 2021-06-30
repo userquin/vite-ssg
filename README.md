@@ -776,7 +776,7 @@ export const createApp = ViteSSG(
 
 #### `vue-plugin-pages`
 
-You can remove all `lang` attribute on all your `router` custom blocks using this configuration:
+You can remove all `lang` attribute on all your `route` custom blocks using this configuration:
 ```ts
 import Pages from 'vite-plugin-pages'
 
@@ -788,7 +788,7 @@ plugins: [
 ]
 ```
 
-With previous configuration, you can now use `router` custom blocks without including `lang` attribute, writing 
+With previous configuration, you can now use `route` custom blocks without including `lang` attribute, writing 
 all your `route` content with `YAML`.
 
 #### `@intlify/vite-plugin-vue-i18n`
@@ -814,10 +814,9 @@ all your `i18n` content with `YAML` when inlined and using `global` scope for in
 #### Build optimizations
 
 We are using `vue-i18n@next` plugin, to optimize your `i18n` resources you must configure your `vite.config.ts` 
-following these steps:
+following these steps (you can read about this topic [here](https://vue-i18n.intlify.dev/guide/advanced/optimization.html)):
 
-- use `vue-i18n@next esm bundler`, configure this `alias` to `vite resolve` option (you can read about this topic 
-  [here](https://vue-i18n.intlify.dev/guide/advanced/optimization.html)):
+- use `vue-i18n@next esm bundler`, configure this `alias` to `vite resolve` option:
 ```ts
 resolve: {
   alias: {
@@ -826,8 +825,7 @@ resolve: {
 }
 ```
 
-- enable `runtimeOnly` and `compositionOnly` options for `@intlify/vite-plugin-vue-i18n` plugin (you can read 
-  about this topic [here](https://vue-i18n.intlify.dev/guide/advanced/optimization.html)):
+- enable `runtimeOnly` and `compositionOnly` options for `@intlify/vite-plugin-vue-i18n` plugin:
 ```ts
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
 
