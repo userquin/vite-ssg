@@ -32,7 +32,7 @@
 import { defineProps, ref } from 'vue'
 import { useI18nRouter, useGlobalI18n, addMetaHeadName, registerCustomHeadHandler } from 'vite-ssg/i18n'
 
-const props = defineProps({ locale: String })
+const props = defineProps<{ locale?: string }>()
 const router = useI18nRouter()
 const { t } = useGlobalI18n()
 
@@ -52,7 +52,7 @@ registerCustomHeadHandler((head) => {
 meta:
   pageI18nKey: PageB
 </route>
-<i18n lang="yaml" global>
+<i18n>
 en:
   PageB:
     title: Hello

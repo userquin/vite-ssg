@@ -3,7 +3,7 @@ meta:
   pageI18nKey: HiPage
 </route>
 
-<i18n lang="yaml" global>
+<i18n>
 en:
   HiPage:
     title: Hi {name}
@@ -24,12 +24,7 @@ es:
 import { useI18nRouter, useGlobalI18n } from 'vite-ssg/i18n'
 import { defineProps } from 'vue'
 
-const props = defineProps({
-  name: {
-    type: String,
-    required: true,
-  },
-})
+const props = defineProps<{ name: string }>()
 
 const router = useI18nRouter()
 const { t } = useGlobalI18n()
