@@ -793,8 +793,6 @@ all your `route` content with `YAML`.
 
 #### `@intlify/vite-plugin-vue-i18n`
 
-**Warning**: only if [feat: add default lang and global scope plugin options for SFC i18n custom block](https://github.com/intlify/vite-plugin-vue-i18n/pull/109) is merged.
-
 You can remove all `lang` and `global` attributes on all your `i18n` custom blocks using this configuration:
 ```ts
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
