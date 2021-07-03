@@ -38,6 +38,8 @@ const config: UserConfig = {
     VueI18n({
       runtimeOnly: true,
       compositionOnly: true,
+      defaultSFCLang: 'yaml',
+      globalSFCScope: true,
       include: [
         path.resolve(__dirname, 'locales/**'),
         path.resolve(__dirname, 'locales/pages/**'),
