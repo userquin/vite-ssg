@@ -2,7 +2,7 @@
 import path, { join, dirname } from 'path'
 import chalk from 'chalk'
 import fs from 'fs-extra'
-import { build as viteBuild, normalizePath, resolveConfig, UserConfig } from 'vite'
+import { build as viteBuild, normalizePath, resolveConfig, UserConfig, Manifest } from 'vite'
 import { renderToString, SSRContext } from '@vue/server-renderer'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { RollupOutput } from 'rollup'
@@ -13,7 +13,9 @@ import { ViteSSGLocale } from '../i18n/types'
 import { renderPreloadLinks } from './preload-links'
 import { buildLog, routesToPaths, getSize } from './utils'
 
-export interface Manifest {
+export { Manifest }
+
+export interface SSRManifest {
   [key: string]: string[]
 }
 
@@ -88,8 +90,11 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
 
   buildLog('Build for client...')
 
+  // todo@userquin: determine if manifest can be deleted once build finish
+  const deleteManifest = config.build.manifest
   await viteBuild({
     build: {
+      manifest: true,
       ssrManifest: true,
       rollupOptions: {
         input: {
@@ -104,7 +109,8 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
   process.env.VITE_SSG = 'true'
   await viteBuild(ssrConfig)
 
-  const ssrManifest: Manifest = JSON.parse(await fs.readFile(join(out, 'ssr-manifest.json'), 'utf-8'))
+  const manifest: Manifest = JSON.parse(await fs.readFile(join(out, 'manifest.json'), 'utf-8'))
+  const ssrManifest: SSRManifest = JSON.parse(await fs.readFile(join(out, 'ssr-manifest.json'), 'utf-8'))
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createApp } = require(join(ssgOut, 'main.js')) as {
@@ -198,7 +204,7 @@ export async function build(cliOptions: Partial<ViteSSGOptions> = {}) {
       const jsdom = new JSDOM(renderedHTML)
 
       // render current page's preloadLinks
-      renderPreloadLinks(jsdom.window.document, ctx.modules || new Set<string>(), ssrManifest)
+      renderPreloadLinks(config.base || '/', jsdom.window.document, ctx.modules || new Set<string>(), ssrManifest, manifest)
 
       // process i18n: keep it here
       await applyI18nSSG(ssgContext)
