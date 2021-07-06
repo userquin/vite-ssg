@@ -1,6 +1,9 @@
 <template>
   <p>Hello I am B</p>
-  <img src="../assets/test.jpg" alt="">
+  <br />
+  <counter />
+  <br />
+  <img src="../assets/test.jpg" alt="" width="640" height="485">
 </template>
 
 <script lang="ts">
