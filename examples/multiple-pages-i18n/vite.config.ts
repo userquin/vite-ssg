@@ -13,12 +13,13 @@ const i18nAlternateBase = (process.env.I18N_BASE ? process.env.I18N_BASE : undef
 const config: UserConfig = {
   resolve: {
     alias: {
+      '@nuxt/devalue': '@nuxt/devalue/dist/devalue.js',
       'vue-i18n': 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js',
     },
   },
-  build: {
-    manifest: !process.env.VITE_SSG,
-  },
+  // build: {
+  //   manifest: !process.env.VITE_SSG,
+  // },
   plugins: [
     Vue({
       include: [/\.vue$/, /\.md$/],
