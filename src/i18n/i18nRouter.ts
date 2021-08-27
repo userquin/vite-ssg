@@ -23,9 +23,9 @@ import {
   configureRouteEntryServer,
   normalizeLocalePathVariable,
 } from './utils'
-import type { I18nRouter } from './composables'
-import type { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
 import type { Router } from 'vue-router'
+import type { HeadClient, HeadObject, HeadObjectPlain } from '@vueuse/head'
+import type { I18nRouter } from './composables'
 import type { RouterConfiguration } from './types'
 
 async function createI18nRouter(

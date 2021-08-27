@@ -2,17 +2,17 @@ import { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import { WritableComputedRef } from '@vue/reactivity'
 import { App, nextTick } from 'vue'
 import {
+  BeforeResolveRouteInfo,
   DefaultViteSSGLocale,
   I18nConfigurationOptions,
   I18nHeadConfigurer,
   ViteI18nSSGContext,
 } from './types'
-import { initializeHead } from './composables'
-import type { I18nRouter } from './composables'
 import type { Ref } from 'vue'
-import type { I18nOptions, I18nRouteMessages, LocaleInfo, ViteSSGLocale } from './types'
 import type { I18n, Locale } from 'vue-i18n'
 import type { HeadClient, HeadObject } from '@vueuse/head'
+import type { I18nRouter } from './composables'
+import type { I18nOptions, I18nRouteMessages, LocaleInfo, ViteSSGLocale } from './types'
 
 export function detectPreferredClientLocale(defaultLocale: Locale, localesMap: Map<string, ViteSSGLocale>) {
   // navigator.languages:    Chrome & FF
@@ -316,6 +316,31 @@ export function configureClientNavigationGuards(
       }
     })
   }
+
+  // here we add the hook for handling client navigation beforeResolve
+  router.beforeResolve(async(to, useFrom) => {
+    const hook = to.meta.beforeResolveClientRoute
+    if (hook) {
+      let from: BeforeResolveRouteInfo | undefined
+      if (useFrom) {
+        const fromLocale = useFrom.params.locale as string
+        from = {
+          locale: localeMap.get(fromLocale || defaultLocale.locale)!,
+          route: useFrom,
+        }
+      }
+      const toLocale = to.params.locale as string
+      await hook({
+        i18n,
+        head,
+        to: {
+          locale: localeMap.get(toLocale || defaultLocale.locale)!,
+          route: to,
+        },
+        from,
+      })
+    }
+  })
 
   // the head object is updated before step 11 on router navigation guard on the new route
   // here were are ready to update the head, will be flush

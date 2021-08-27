@@ -1,11 +1,11 @@
 import { Composer, I18n } from 'vue-i18n'
 import { RouterOptions, ViteSSGClientOptions, ViteSSGContext, ViteSSGOptions } from '../types'
 import { useAvailableLocales, useI18nRouter, injectHeadObject, useGlobalI18n, addMetaHeadName, addMetaHeadProperty, registerCustomHeadHandler } from './composables'
-import type { CustomHeadHandler } from './composables'
 import type { Locale } from 'vue-i18n'
 import type { HeadAttrs, HeadClient, HeadObject } from '@vueuse/head'
 import type { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 import type { Ref } from 'vue'
+import type { CustomHeadHandler } from './composables'
 
 export type ViteSSGLocale = {
   locale: Locale
@@ -154,6 +154,18 @@ export type RouterConfiguration = {
   i18n: I18nConfigurationOptions
 }
 
+export type BeforeResolveRouteInfo = {
+  locale: ViteSSGLocale
+  route: RouteLocationNormalized
+}
+
+export type BeforeResolveRoute = {
+  i18n: I18n<Record<string, any>, unknown, unknown, false>
+  head: HeadClient
+  to: BeforeResolveRouteInfo
+  from?: BeforeResolveRouteInfo
+}
+
 // extend vue-router meta
 declare module 'vue-router' {
   interface RouteMeta {
@@ -253,5 +265,22 @@ declare module 'vue-router' {
      */
     // @ts-ignore ignore when vue is not installed
     crawling?: Crawling
+    /**
+     * A map to store data between route transitions.
+     *
+     * For example, you can use `beforeResolveClientRoute` for fetching data before resolving the component,
+     * store here and then use the route meta data to access to the data fetch on `beforeResolveClientRoute`.
+     */
+    data?: Record<string, any>
+    /**
+     * Callback invoked on `beforeResolve`.
+     *
+     * This callback can be used to prefetch for fetching data before resolving the component or initialize the data store
+     * (do not initialize directly the store, just the data, and then on you page view add a `computed` property accessing
+     * the data).
+     *
+     * @param info The data with the info for `to` and `from` routes.
+     */
+    beforeResolveClientRoute?: (info: BeforeResolveRoute) => Promise<void>
   }
 }
